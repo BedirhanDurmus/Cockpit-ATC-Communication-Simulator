@@ -145,8 +145,6 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         language: 'en-US',
         pitch: 1.0,
         rate: 0.9,
-        quality: 'Enhanced',
-        voice: 'en-us-x-sfg#male_1-local', // Force US voice if available
       });
     }
   }, []);

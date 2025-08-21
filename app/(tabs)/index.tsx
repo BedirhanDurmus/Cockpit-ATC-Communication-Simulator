@@ -367,10 +367,10 @@ export default function TrainingScreen() {
             </View>
           )}
 
-          {/* Hidden Readback Display - Only visible when not waiting for response */}
-          {transcribedText && !isWaitingForResponse && (
+          {/* Readback Display - Only show after feedback is cleared and no ATC command/question active */}
+          {transcribedText && !isWaitingForResponse && !lastFeedback && !(currentCommand || currentQuestion) && (
             <View style={styles.readbackDisplay}>
-              <Text style={styles.readbackLabel}>YOUR RESPONSE:</Text>
+              <Text style={styles.readbackLabel}>YOUR LAST RESPONSE:</Text>
               <Text style={styles.readbackText} numberOfLines={2} ellipsizeMode="tail">
                 {transcribedText}
               </Text>
@@ -672,14 +672,6 @@ const styles = StyleSheet.create({
   transcriptionText: {
     color: "white",
     fontSize: 16,
-  },
-  feedbackContainer: {
-    margin: 20,
-    marginTop: 0,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    alignItems: "center",
   },
   feedbackCorrect: {
     backgroundColor: "rgba(0, 168, 107, 0.1)",
