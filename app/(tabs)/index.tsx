@@ -461,7 +461,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#0a0a0a",
   },
   header: {
-    padding: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#333",
   },
@@ -469,7 +470,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "white",
-    marginBottom: 10,
+    marginBottom: 6,
   },
   sessionInfo: {
     flexDirection: "row",

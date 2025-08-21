@@ -49,6 +49,15 @@ export default function NavigationDisplay({
     { x: 750, y: 400 },
   ];
   
+  // Precomputed top chip set (left-aligned, evenly spaced)
+  const topChips = [
+    { label: 'NAV', width: 70, fill: '#012a2a', stroke: '#00FFFF', color: '#00FFFF' },
+    { label: `RNG ${range}NM`, width: 120, fill: '#062406', stroke: '#00FF00', color: '#00FF00' },
+    { label: `HDG ${Math.round(heading).toString().padStart(3,'0')}°`, width: 140, fill: '#062406', stroke: '#00FF00', color: '#00FF00' },
+    { label: weatherEnabled ? 'WXR ON' : 'WXR OFF', width: 120, fill: '#2a2400', stroke: '#FFFF00', color: '#FFFF00' },
+    { label: tcasEnabled ? 'TCAS ON' : 'TCAS OFF', width: 140, fill: '#012a2a', stroke: '#00FFFF', color: '#00FFFF' },
+  ];
+  
   return (
     <View style={styles.container}>
       {/* Professional Navigation Display */}
@@ -74,7 +83,7 @@ export default function NavigationDisplay({
         {/* Range Rings */}
         <G>
           {[1, 2, 3, 4].map((ring) => {
-            const radius = (ring * 80);
+            const radius = (ring * 70);
             return (
               <Circle
                 key={ring}
@@ -90,20 +99,21 @@ export default function NavigationDisplay({
           })}
         </G>
 
-        {/* Compass Rose */}
+        {/* Compass Rose - slightly smaller so labels fit */
+        }
         <G transform={`translate(${aircraftX}, ${aircraftY})`}>
         {/* Outer compass ring */}
-          <Circle cx="0" cy="0" r="340" fill="none" stroke="#00FF00" strokeWidth="2" />
+          <Circle cx="0" cy="0" r="300" fill="none" stroke="#00FF00" strokeWidth="2" />
           
           {/* Compass markings */}
           {Array.from({ length: 36 }, (_, i) => {
             const angle = i * 10;
             const radian = ((angle - 90) * Math.PI) / 180;
             const isMajor = angle % 30 === 0;
-            const x1 = Math.cos(radian) * 330;
-            const y1 = Math.sin(radian) * 330;
-            const x2 = Math.cos(radian) * (isMajor ? 345 : 340);
-            const y2 = Math.sin(radian) * (isMajor ? 345 : 340);
+            const x1 = Math.cos(radian) * 290;
+            const y1 = Math.sin(radian) * 290;
+            const x2 = Math.cos(radian) * (isMajor ? 305 : 300);
+            const y2 = Math.sin(radian) * (isMajor ? 305 : 300);
           
           return (
               <G key={angle}>
@@ -114,8 +124,8 @@ export default function NavigationDisplay({
                 />
                 {isMajor && (
             <SvgText
-                    x={Math.cos(radian) * 360} 
-                    y={Math.sin(radian) * 360 + 6} 
+                    x={Math.cos(radian) * 315} 
+                    y={Math.sin(radian) * 315 + 6} 
                     fill="#00FF00" 
                     fontSize="16" 
                     fontFamily="monospace"
@@ -264,44 +274,77 @@ export default function NavigationDisplay({
           <Circle cx="0" cy="0" r="3" fill="#FFFFFF" />
         </G>
 
-        {/* Top Information Bar */}
-        <Rect x="0" y="0" width="1200" height="50" fill="#1a1a1a" />
-        <SvgText x="20" y="30" fill="#00FFFF" fontSize="16" fontFamily="monospace" fontWeight="bold">
-          NAV
-        </SvgText>
-        <SvgText x="100" y="30" fill="#00FF00" fontSize="14" fontFamily="monospace">
-          RNG {range}NM
-        </SvgText>
-        <SvgText x="250" y="30" fill="#00FF00" fontSize="14" fontFamily="monospace">
-          HDG {heading.toString().padStart(3, '0')}°
-        </SvgText>
-        <SvgText x="400" y="30" fill="#FFFF00" fontSize="14" fontFamily="monospace">
-          {weatherEnabled ? "WXR ON" : "WXR OFF"}
-        </SvgText>
-        <SvgText x="550" y="30" fill="#00FFFF" fontSize="14" fontFamily="monospace">
-          {tcasEnabled ? "TCAS ON" : "TCAS OFF"}
-        </SvgText>
-        <SvgText x="1100" y="30" fill="#00FF00" fontSize="14" fontFamily="monospace" textAnchor="end">
-          FL{Math.floor(altitude / 100)}
-        </SvgText>
+        {/* Top Information Bar - modern bezel with chips */}
+        <Rect x="0" y="0" width="1200" height="50" fill="#111" stroke="#2a2a2a" strokeWidth="2" />
+        {/* chips aligned from left */}
+        {(() => {
+          let x = 16;
+          const y = 6;
+          const gap = 10;
+          // Compute dynamic layout bounds
+          const leftEnd = 16 + topChips.reduce((sum, c) => sum + c.width, 0) + (topChips.length - 1) * gap;
+          const rightChipWidth = 150;
+          const rightChipX = 1200 - 20 - rightChipWidth; // keep 20px right margin like left
+          const centerChipWidth = 300;
+          // Center the middle chip between leftEnd and rightChipX
+          const centerChipX = leftEnd + ((rightChipX - leftEnd) - centerChipWidth) / 2;
 
-        {/* Bottom Information Panel */}
-        <Rect x="0" y="650" width="1200" height="50" fill="#1a1a1a" />
-        <SvgText x="20" y="680" fill="#00FF00" fontSize="14" fontFamily="monospace">
-          GS {Math.round(speed)} KT
-        </SvgText>
-        <SvgText x="200" y="680" fill="#00FFFF" fontSize="14" fontFamily="monospace">
-          TRK {heading.toString().padStart(3, '0')}°
-        </SvgText>
-        <SvgText x="400" y="680" fill="#FF00FF" fontSize="14" fontFamily="monospace">
-          NEXT WPT02 15NM
-        </SvgText>
-        <SvgText x="700" y="680" fill="#FFFF00" fontSize="14" fontFamily="monospace">
-          ETA 14:25Z
-        </SvgText>
-        <SvgText x="1100" y="680" fill="#00FF00" fontSize="14" fontFamily="monospace" textAnchor="end">
-          LNAV VNAV
-        </SvgText>
+          return (
+            <G>
+              {topChips.map((c, i) => {
+                const cx = x + c.width / 2;
+                const node = (
+                  <G key={i}>
+                    <Rect x={x} y={y} rx={10} ry={10} width={c.width} height={30} fill={c.fill} stroke={c.stroke} strokeWidth={2} />
+                    <SvgText x={cx} y={y + 20} fill={c.color} fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">{c.label}</SvgText>
+                  </G>
+                );
+                x += c.width + gap;
+                return node;
+              })}
+              {/* center top message chip to fill empty bar symmetrically */}
+              <G>
+                <Rect x={centerChipX} y={y} rx={10} ry={10} width={centerChipWidth} height={30} fill="#0b0b0b" stroke="#444" strokeWidth={2} />
+                <SvgText x={centerChipX + centerChipWidth / 2} y={y + 20} fill="#AAAAAA" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">ATC COMM ACTIVE</SvgText>
+              </G>
+              {/* right-aligned FL chip */}
+              <G>
+                <Rect x={rightChipX} y={y} rx={10} ry={10} width={rightChipWidth} height={30} fill="#062406" stroke="#00FF00" strokeWidth={2} />
+                <SvgText x={rightChipX + rightChipWidth / 2} y={y + 20} fill="#00FF00" fontSize="12" fontFamily="monospace" textAnchor="middle">FL{Math.floor(altitude / 100)}</SvgText>
+              </G>
+            </G>
+          );
+        })()}
+
+        {/* Bottom Information Panel - modern bezel with chips */}
+        <Rect x="0" y="650" width="1200" height="50" fill="#111" stroke="#2a2a2a" strokeWidth="2" />
+        <G>
+          <G>
+            <Rect x="16" y="664" rx="10" ry="10" width="140" height="30" fill="#062406" stroke="#00FF00" strokeWidth="2" />
+            <SvgText x="86" y="684" fill="#00FF00" fontSize="12" fontFamily="monospace" textAnchor="middle">GS {Math.round(speed)} KT</SvgText>
+          </G>
+          <G>
+            <Rect x="170" y="664" rx="10" ry="10" width="150" height="30" fill="#012a2a" stroke="#00FFFF" strokeWidth="2" />
+            <SvgText x="245" y="684" fill="#00FFFF" fontSize="12" fontFamily="monospace" textAnchor="middle">TRK {heading.toString().padStart(3,'0')}°</SvgText>
+          </G>
+          <G>
+            <Rect x="330" y="664" rx="10" ry="10" width="220" height="30" fill="#240024" stroke="#FF00FF" strokeWidth="2" />
+            <SvgText x="440" y="684" fill="#FF00FF" fontSize="12" fontFamily="monospace" textAnchor="middle">NEXT WPT02 15NM</SvgText>
+          </G>
+          <G>
+            <Rect x="560" y="664" rx="10" ry="10" width="160" height="30" fill="#2a2400" stroke="#FFFF00" strokeWidth="2" />
+            <SvgText x="640" y="684" fill="#FFFF00" fontSize="12" fontFamily="monospace" textAnchor="middle">ETA 14:25Z</SvgText>
+          </G>
+          {/* center bottom communication/status chip */}
+          <G>
+            <Rect x="740" y="664" rx="10" ry="10" width="220" height="30" fill="#0b0b0b" stroke="#444" strokeWidth="2" />
+            <SvgText x="850" y="684" fill="#AAAAAA" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">COM1 118.10  STBY 121.80</SvgText>
+          </G>
+          <G>
+            <Rect x="980" y="664" rx="10" ry="10" width="200" height="30" fill="#062406" stroke="#00FF00" strokeWidth="2" />
+            <SvgText x="1080" y="684" fill="#00FF00" fontSize="12" fontFamily="monospace" textAnchor="middle">LNAV  VNAV</SvgText>
+          </G>
+        </G>
 
         {/* Range Scale */}
         <G transform="translate(50, 350)">
@@ -319,22 +362,40 @@ export default function NavigationDisplay({
 
         {/* Mode Selector */}
         <G transform="translate(1050, 350)">
-          <Rect x="0" y="-60" width="100" height="120" fill="rgba(0,0,0,0.7)" stroke="#666" strokeWidth="2" rx="8" />
-          <SvgText x="50" y="-40" fill="#00FF00" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
-            MODE
-          </SvgText>
-          <Rect x="10" y="-20" width="80" height="20" fill="#FF00FF" rx="3" />
-          <SvgText x="50" y="-7" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
-            PLAN
-          </SvgText>
-          <Rect x="10" y="10" width="80" height="20" fill="#1a1a1a" stroke="#666" strokeWidth="1" rx="3" />
-          <SvgText x="50" y="23" fill="#FFFFFF" fontSize="12" fontFamily="monospace" textAnchor="middle">
-            MAP
-          </SvgText>
-          <Rect x="10" y="40" width="80" height="20" fill="#1a1a1a" stroke="#666" strokeWidth="1" rx="3" />
-          <SvgText x="50" y="53" fill="#FFFFFF" fontSize="12" fontFamily="monospace" textAnchor="middle">
-            ROSE
-          </SvgText>
+          {(() => {
+            const panelWidth = 120;
+            const panelHeight = 130;
+            const panelX = 0;
+            const panelY = -panelHeight / 2; // center vertically around transform origin
+            const padding = 12;
+            const buttonWidth = panelWidth - padding * 2;
+            const buttonHeight = 24;
+            const buttonRadius = 6;
+            const gap = 10;
+            const titleY = panelY + 20;
+            const firstButtonY = panelY + 34;
+            const centerX = panelX + panelWidth / 2;
+            const buttonX = panelX + padding;
+
+            return (
+              <G>
+                <Rect x={panelX} y={panelY} width={panelWidth} height={panelHeight} fill="rgba(0,0,0,0.7)" stroke="#888" strokeWidth="2" rx="10" />
+                <SvgText x={centerX} y={titleY} fill="#00FF00" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">MODE</SvgText>
+
+                {/* PLAN (active) */}
+                <Rect x={buttonX} y={firstButtonY} width={buttonWidth} height={buttonHeight} fill="#FF00FF" stroke="#FF00FF" strokeWidth="1.5" rx={buttonRadius} />
+                <SvgText x={centerX} y={firstButtonY + 16} fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">PLAN</SvgText>
+
+                {/* MAP */}
+                <Rect x={buttonX} y={firstButtonY + buttonHeight + gap} width={buttonWidth} height={buttonHeight} fill="#1a1a1a" stroke="#666" strokeWidth="1.5" rx={buttonRadius} />
+                <SvgText x={centerX} y={firstButtonY + buttonHeight + gap + 16} fill="#FFFFFF" fontSize="12" fontFamily="monospace" textAnchor="middle">MAP</SvgText>
+
+                {/* ROSE */}
+                <Rect x={buttonX} y={firstButtonY + (buttonHeight + gap) * 2} width={buttonWidth} height={buttonHeight} fill="#1a1a1a" stroke="#666" strokeWidth="1.5" rx={buttonRadius} />
+                <SvgText x={centerX} y={firstButtonY + (buttonHeight + gap) * 2 + 16} fill="#FFFFFF" fontSize="12" fontFamily="monospace" textAnchor="middle">ROSE</SvgText>
+              </G>
+            );
+          })()}
         </G>
       </Svg>
       

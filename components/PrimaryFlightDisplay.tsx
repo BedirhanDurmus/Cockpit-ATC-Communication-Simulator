@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
   dimToggle: {
     position: 'absolute',
     top: 8,
-    right: 8,
+    left: 8,
     backgroundColor: '#111',
     borderWidth: 2,
     borderColor: '#444',
