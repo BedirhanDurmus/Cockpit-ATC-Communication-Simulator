@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Dimensions, useColorScheme, Platform } from "react-native";
 import Svg, { 
   Line, Path, Text as SvgText, G, Rect, Circle, Polygon, 
   Defs, LinearGradient, Stop, ClipPath, RadialGradient, Filter, 
@@ -25,18 +25,66 @@ export default function PrimaryFlightDisplay({
   const [targetSpeed, setTargetSpeed] = useState(250);
   const [glideslope, setGlideslope] = useState(0);
   const [localizer, setLocalizer] = useState(0.5);
+  const [selectedSpeed, setSelectedSpeed] = useState(250);
+  const [selectedHeading, setSelectedHeading] = useState(270);
 
-  // Enhanced realistic flight simulation
+  // Smooth animation targets for more professional motion
+  const [targetPitch, setTargetPitch] = useState(2);
+  const [targetRoll, setTargetRoll] = useState(-1);
+  const [targetGlideslope, setTargetGlideslope] = useState(0);
+  const [targetLocalizer, setTargetLocalizer] = useState(0.5);
+
+  const targetsRef = React.useRef({
+    pitch: 2,
+    roll: -1,
+    glideslope: 0,
+    localizer: 0.5,
+  });
+
   useEffect(() => {
+    targetsRef.current = {
+      pitch: targetPitch,
+      roll: targetRoll,
+      glideslope: targetGlideslope,
+      localizer: targetLocalizer,
+    };
+  }, [targetPitch, targetRoll, targetGlideslope, targetLocalizer]);
+
+  // Simulated input updates for targets (slowly varying)
+  useEffect(() => {
+    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
     const interval = setInterval(() => {
-      setPitch(prev => Math.max(-8, Math.min(8, prev + (Math.random() - 0.5) * 0.6)));
-      setRoll(prev => Math.max(-12, Math.min(12, prev + (Math.random() - 0.5) * 0.8)));
-      setGlideslope(prev => Math.max(-2, Math.min(2, prev + (Math.random() - 0.5) * 0.3)));
-      setLocalizer(prev => Math.max(-2, Math.min(2, prev + (Math.random() - 0.5) * 0.2)));
-    }, 2000);
+      setTargetPitch(prev => clamp(prev + (Math.random() - 0.5) * 1.6, -8, 8));
+      setTargetRoll(prev => clamp(prev + (Math.random() - 0.5) * 2.0, -12, 12));
+      setTargetGlideslope(prev => clamp(prev + (Math.random() - 0.5) * 0.5, -2, 2));
+      setTargetLocalizer(prev => clamp(prev + (Math.random() - 0.5) * 0.4, -2, 2));
+      // Simulate pilot selections slightly drifting
+      setSelectedSpeed(prev => clamp(prev + (Math.random() - 0.5) * 4, 120, 480));
+      setSelectedHeading(prev => (prev + (Math.random() - 0.5) * 4 + 360) % 360);
+    }, 1800);
     return () => clearInterval(interval);
   }, []);
 
+  // Smoothly interpolate current values toward targets every frame
+  useEffect(() => {
+    let rafId: number;
+    const animate = () => {
+      const t = targetsRef.current;
+      setPitch(p => p + (t.pitch - p) * 0.12);
+      setRoll(r => r + (t.roll - r) * 0.14);
+      setGlideslope(g => g + (t.glideslope - g) * 0.12);
+      setLocalizer(l => l + (t.localizer - l) * 0.12);
+      rafId = requestAnimationFrame(animate);
+    };
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
+
+  const colorScheme = useColorScheme();
+  const dimMode = colorScheme === 'dark';
+  const uiFont = Platform.select({ ios: 'System', android: 'sans-serif' }) || 'System';
+  const stallSpeed = 120;
+  const overspeed = 460;
   const flightLevel = Math.floor(altitude / 100);
   const machNumber = (speed * 0.00147).toFixed(3);
   const baroSetting = 29.92;
@@ -147,6 +195,27 @@ export default function PrimaryFlightDisplay({
             );
           })}
 
+          {/* Stall / Overspeed bands */}
+          {(() => {
+            const mapYFromSpeed = (S: number) => 140 + ((S - (speed - 95)) / 10) * 19;
+            const top = 120;
+            const bottom = 500;
+            const yStall = mapYFromSpeed(stallSpeed);
+            const yOver = mapYFromSpeed(overspeed);
+            return (
+              <>
+                {/* Stall (low speed zone) */}
+                {yStall < bottom && (
+                  <Rect x="15" y={Math.max(top, yStall)} width="150" height={Math.max(0, bottom - Math.max(top, yStall))} fill="rgba(255,0,0,0.12)" />
+                )}
+                {/* Overspeed (high speed zone) */}
+                {yOver > top && (
+                  <Rect x="15" y={top} width="150" height={Math.max(0, Math.min(bottom, yOver) - top)} fill="rgba(255,165,0,0.12)" />
+                )}
+              </>
+            );
+          })()}
+
           {/* V-Speed Bugs */}
           {/* V1 Speed */}
           <Polygon points="165,280 175,285 175,275" fill="#FF00FF" stroke="#000" strokeWidth="1" />
@@ -161,13 +230,24 @@ export default function PrimaryFlightDisplay({
         <Rect x="12" y="292" width="155" height="45" fill="#333" rx="8" opacity="0.3" />
         <Rect x="10" y="290" width="155" height="45" fill="#000" stroke="#00FF00" strokeWidth="3" rx="8" />
         <Rect x="15" y="295" width="145" height="35" fill="url(#instrumentGlow)" rx="5" />
-        <SvgText x="87" y="320" fill="#00FF00" fontSize="28" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <SvgText x="87" y="320" fill="#00FF00" fontSize="28" fontFamily={uiFont} textAnchor="middle" fontWeight="bold">
           {Math.round(speed)}
         </SvgText>
+        {/* Selected Speed Bug */}
+        {(() => {
+          const pxPerKt = 1.9; // 10 kt ~ 19 px
+          const bugY = 305 + (selectedSpeed - speed) * pxPerKt;
+          return (
+            <>
+              <Polygon points={`165,${bugY} 175,${bugY + 6} 175,${bugY - 6}`} fill="#FFFF00" stroke="#000" strokeWidth="1" />
+              <SvgText x="185" y={bugY + 4} fill="#FFFF00" fontSize="11" fontFamily={uiFont} fontWeight="bold">SPD</SvgText>
+            </>
+          );
+        })()}
 
         {/* Mach Number Display - Enhanced */}
         <Rect x="15" y="60" width="150" height="40" fill="#000" stroke="#30363d" strokeWidth="2" rx="8" />
-        <SvgText x="90" y="85" fill="#00FFFF" fontSize="18" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <SvgText x="90" y="85" fill="#00FFFF" fontSize="18" fontFamily={uiFont} textAnchor="middle" fontWeight="bold">
           M{machNumber.slice(2)}
         </SvgText>
 
@@ -212,7 +292,7 @@ export default function PrimaryFlightDisplay({
                     y={y + 6} 
                     fill={isCurrent ? "#00FF00" : "#FFFFFF"} 
                     fontSize="16" 
-                    fontFamily="monospace"
+                    fontFamily={uiFont}
                     fontWeight="bold"
                     textAnchor="end"
                   >
@@ -236,46 +316,46 @@ export default function PrimaryFlightDisplay({
         <Rect x="637" y="292" width="155" height="45" fill="#333" rx="8" opacity="0.3" />
         <Rect x="635" y="290" width="155" height="45" fill="#000" stroke="#00FF00" strokeWidth="3" rx="8" />
         <Rect x="640" y="295" width="145" height="35" fill="url(#instrumentGlow)" rx="5" />
-        <SvgText x="712" y="320" fill="#00FF00" fontSize="28" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <SvgText x="712" y="320" fill="#00FF00" fontSize="28" fontFamily={uiFont} textAnchor="middle" fontWeight="bold">
           {Math.round(altitude)}
         </SvgText>
 
         {/* Barometric Setting */}
         <Rect x="635" y="350" width="150" height="30" fill="#000" stroke="#30363d" strokeWidth="2" rx="5" />
-        <SvgText x="710" y="370" fill="#00FFFF" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <SvgText x="710" y="370" fill="#00FFFF" fontSize="14" fontFamily={uiFont} textAnchor="middle" fontWeight="bold">
           {baroSetting.toFixed(2)}
         </SvgText>
 
         {/* Radio Altitude */}
         <Rect x="635" y="385" width="150" height="30" fill="#000" stroke="#30363d" strokeWidth="2" rx="5" />
-        <SvgText x="710" y="405" fill="#FFFF00" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <SvgText x="710" y="405" fill="#FFFF00" fontSize="14" fontFamily={uiFont} textAnchor="middle" fontWeight="bold">
           RA {Math.round(radioAlt)}
         </SvgText>
 
         {/* Flight Level Display - Enhanced */}
         <Rect x="635" y="60" width="150" height="40" fill="#000" stroke="#30363d" strokeWidth="2" rx="8" />
-        <SvgText x="710" y="85" fill="#00FFFF" fontSize="18" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <SvgText x="710" y="85" fill="#00FFFF" fontSize="18" fontFamily={uiFont} textAnchor="middle" fontWeight="bold">
           FL{flightLevel}
         </SvgText>
 
         {/* === ULTRA-ENHANCED ATTITUDE INDICATOR === */}
         <G clipPath="url(#attitudeClip)">
           <G transform={`translate(400, 310) rotate(${roll}) translate(-400, -310)`}>
-            {/* Sky with Enhanced Gradient */}
+            {/* Sky with Enhanced Gradient - expanded slightly to avoid seams when rotating */}
             <Rect 
-              x="180" 
-              y={120 - pitch * 12} 
-              width="440" 
-              height={190 + pitch * 12} 
+              x="170" 
+              y={100 - pitch * 12} 
+              width="460" 
+              height={230 + pitch * 12} 
               fill="url(#skyGradient)" 
             />
             
             {/* Ground with Enhanced Gradient */}
             <Rect 
-              x="180" 
-              y={310 - pitch * 12} 
-              width="440" 
-              height={190 + pitch * 12} 
+              x="170" 
+              y={300 - pitch * 12} 
+              width="460" 
+              height={230 + pitch * 12} 
               fill="url(#groundGradient)" 
             />
 
@@ -301,7 +381,7 @@ export default function PrimaryFlightDisplay({
             {/* Ultra-Enhanced Pitch Scale */}
             {[-30, -20, -10, -5, 5, 10, 20, 30].map((pitchValue) => {
               const y = 310 - pitchValue * 12 - pitch * 12;
-              const lineLength = Math.abs(pitchValue) === 10 || Math.abs(pitchValue) === 20 ? 160 : 100;
+              const lineLength = Math.abs(pitchValue) === 10 || Math.abs(pitchValue) === 20 ? 100 : 70;
               const startX = 400 - lineLength / 2;
               const endX = 400 + lineLength / 2;
               const isMinor = Math.abs(pitchValue) === 5;
@@ -382,6 +462,25 @@ export default function PrimaryFlightDisplay({
                 </G>
               );
             })}
+
+            {/* Flight Path Vector (FPV) */}
+            {(() => {
+              const ktsToFtPerSec = 1.68781;
+              const vsFtPerSec = verticalSpeed / 60;
+              const tasFtPerSec = Math.max(1, speed * ktsToFtPerSec);
+              const fpaDeg = Math.atan2(vsFtPerSec, tasFtPerSec) * (180 / Math.PI);
+              const y = 310 - fpaDeg * 12; // 1 deg ~ 12px
+              const x = 400; // no lateral drift modeled
+              return (
+                <G>
+                  <Circle cx={x} cy={y} r="6" fill="#00FF00" opacity="0.2" />
+                  <Circle cx={x} cy={y} r="2" fill="#00FF00" />
+                  <Line x1={x - 14} y1={y} x2={x - 2} y2={y} stroke="#00FF00" strokeWidth="2" />
+                  <Line x1={x + 2} y1={y} x2={x + 14} y2={y} stroke="#00FF00" strokeWidth="2" />
+                  <Line x1={x} y1={y + 10} x2={x} y2={y + 18} stroke="#00FF00" strokeWidth="2" />
+                </G>
+              );
+            })()}
           </G>
         </G>
 
@@ -411,7 +510,7 @@ export default function PrimaryFlightDisplay({
         </G>
 
         {/* === ULTRA-ENHANCED BANK ANGLE SCALE === */}
-        <G transform="translate(400, 140)">
+        <G transform="translate(400, 220)">
           {/* Bank angle arc */}
           <Path 
             d="M -80 0 A 80 80 0 0 1 80 0" 
@@ -515,34 +614,34 @@ export default function PrimaryFlightDisplay({
           <SvgText x="20" y="5" fill="#FFFFFF" fontSize="11" textAnchor="middle" fontWeight="bold">G/S</SvgText>
         </G>
 
-        {/* === ENHANCED VERTICAL SPEED INDICATOR === */}
-        <Rect x="650" y="520" width="80" height="100" fill="#0d1117" stroke="#30363d" strokeWidth="2" rx="8" />
-        <SvgText x="690" y="535" fill="#FFFFFF" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">VS</SvgText>
+        {/* === ENHANCED VERTICAL SPEED INDICATOR (Bottom-right panel space) === */}
+        <Rect x="635" y="510" width="150" height="150" fill="#0d1117" stroke="#30363d" strokeWidth="2" rx="8" />
+        <SvgText x="710" y="530" fill="#FFFFFF" fontSize="14" fontFamily={uiFont} textAnchor="middle" fontWeight="bold">VS</SvgText>
         
         {/* VS Scale - Enhanced */}
         {[-2000, -1000, -500, 0, 500, 1000, 2000].map((vs, i) => {
-          const y = 545 + (i * 10);
+          const y = 535 + (i * 15);
           const isZero = vs === 0;
-                      return (
-              <G key={vs}>
-                <Line 
-                  x1={isZero ? "655" : "665"} 
-                  y1={y} 
-                  x2={isZero ? "720" : "675"} 
-                  y2={y} 
-                  stroke="#FFFFFF" 
-                  strokeWidth={isZero ? "3" : "1"} 
-                />
-                <SvgText x="680" y={y + 3} fill="#FFFFFF" fontSize="9" fontFamily="monospace" textAnchor="start">
-                  {Math.abs(vs / 1000)}
-                </SvgText>
-              </G>
-            );
-          })}
+          return (
+            <G key={vs}>
+              <Line 
+                x1={isZero ? "640" : "650"} 
+                y1={y} 
+                x2={isZero ? "780" : "770"} 
+                y2={y} 
+                stroke="#FFFFFF" 
+                strokeWidth={isZero ? "3" : "1"} 
+              />
+              <SvgText x="705" y={y + 3} fill="#FFFFFF" fontSize="9" fontFamily={uiFont} textAnchor="start">
+                {Math.abs(vs / 1000)}
+              </SvgText>
+            </G>
+          );
+        })}
 
         {/* Current VS Digital Display */}
-        <Rect x="655" y="580" width="70" height="20" fill="#000" stroke="#666" strokeWidth="2" rx="3" />
-        <SvgText x="690" y="594" fill={verticalSpeed > 0 ? "#00FF00" : verticalSpeed < 0 ? "#FF0000" : "#FFFFFF"} 
+        <Rect x="665" y="625" width="90" height="26" fill="#000" stroke="#666" strokeWidth="2" rx="3" />
+        <SvgText x="710" y="642" fill={verticalSpeed > 0 ? "#00FF00" : verticalSpeed < 0 ? "#FF0000" : "#FFFFFF"} 
                  fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
           {verticalSpeed > 0 ? "+" : ""}{Math.round(verticalSpeed)}
         </SvgText>
@@ -566,7 +665,7 @@ export default function PrimaryFlightDisplay({
                 strokeWidth={isMajor ? "3" : "2"} 
               />
               {isMajor && (
-                <SvgText x={x} y="555" fill="#FFFFFF" fontSize="16" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+                <SvgText x={x} y="555" fill="#FFFFFF" fontSize="16" fontFamily={uiFont} textAnchor="middle" fontWeight="bold">
                   {Math.round(hdgValue).toString().padStart(3, '0')}
                 </SvgText>
               )}
@@ -574,33 +673,45 @@ export default function PrimaryFlightDisplay({
             );
           })}
 
+        {/* Selected Heading Bug */}
+        {(() => {
+          const delta = (((selectedHeading - heading) + 540) % 360) - 180; // [-180,180]
+          const pxPerDeg = 26 / 10; // 10 deg ~ 26 px
+          if (Math.abs(delta) > 50) return null;
+          const x = 400 + delta * pxPerDeg;
+          const yTop = 570;
+          return (
+            <Polygon points={`${x},${yTop + 10} ${x - 8},${yTop} ${x + 8},${yTop}`} fill="#FFFF00" stroke="#000" strokeWidth="2" />
+          );
+        })()}
+
         {/* Current Heading Digital Display - Enhanced */}
         <Rect x="352" y="582" width="96" height="35" fill="#333" rx="8" opacity="0.3" />
         <Rect x="350" y="580" width="96" height="35" fill="#000" stroke="#00FF00" strokeWidth="3" rx="8" />
-        <SvgText x="398" y="602" fill="#00FF00" fontSize="20" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
-          {heading.toString().padStart(3, '0')}°
+        <SvgText x="398" y="602" fill="#00FF00" fontSize="20" fontFamily={uiFont} textAnchor="middle" fontWeight="bold">
+          {Math.round(heading).toString().padStart(3, '0')}°
         </SvgText>
 
         {/* === ENHANCED FLIGHT MODE ANNUNCIATORS === */}
-        <G transform="translate(250, 25)">
+        <G transform="translate(80, 25)">
           {/* Autopilot Modes */}
-          <Rect x="0" y="0" width="60" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
-          <SvgText x="30" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="0" y="0" width="90" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="45" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             A/P
           </SvgText>
           
-          <Rect x="70" y="0" width="60" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
-          <SvgText x="100" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="200" y="0" width="90" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="245" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             LNAV
           </SvgText>
           
-          <Rect x="140" y="0" width="60" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
-          <SvgText x="170" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="400" y="0" width="90" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="445" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             VNAV
           </SvgText>
 
-          <Rect x="210" y="0" width="60" height="25" fill="#FFFF00" rx="4" stroke="#000" strokeWidth="2" />
-          <SvgText x="240" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="600" y="0" width="90" height="25" fill="#FFFF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="645" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             APP
           </SvgText>
         </G>
