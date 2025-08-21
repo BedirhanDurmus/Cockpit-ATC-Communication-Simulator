@@ -309,14 +309,28 @@ export default function TrainingScreen() {
               </View>
             )}
 
+            {/* Enhanced Feedback Display */}
             {lastFeedback && (
-              <View style={[
-                styles.overlayFeedback,
-                lastFeedback.isCorrect ? styles.feedbackCorrect : styles.feedbackIncorrect
-              ]}>
-                <Text style={styles.overlayFeedbackText}>
-                  {lastFeedback.isCorrect ? "✓ CORRECT" : "✗ INCORRECT"}
-                </Text>
+              <View style={styles.feedbackOverlay}>
+                <View style={[
+                  styles.feedbackContainer,
+                  lastFeedback.isCorrect ? styles.feedbackCorrect : styles.feedbackIncorrect
+                ]}>
+                  <Ionicons 
+                    name={lastFeedback.isCorrect ? "checkmark-circle" : "close-circle"} 
+                    color={lastFeedback.isCorrect ? "#00FF00" : "#FF0000"} 
+                    size={32} 
+                  />
+                  <Text style={[
+                    styles.feedbackMainText,
+                    { color: lastFeedback.isCorrect ? "#00FF00" : "#FF0000" }
+                  ]}>
+                    {lastFeedback.isCorrect ? "CORRECT" : "INCORRECT"}
+                  </Text>
+                  <Text style={styles.feedbackSubText}>
+                    {lastFeedback.isCorrect ? "Good readback!" : "Try again"}
+                  </Text>
+                </View>
               </View>
             )}
           </View>
@@ -333,9 +347,30 @@ export default function TrainingScreen() {
 
         {/* Bottom Communication Panel */}
         <View style={styles.communicationPanel}>
-          {transcribedText && (
+          {/* ATC Command/Question Display */}
+          {(currentCommand || currentQuestion) && (
+            <View style={styles.atcDisplay}>
+              <View style={styles.atcHeader}>
+                <Ionicons 
+                  name="radio" 
+                  color="#FFA500" 
+                  size={16} 
+                  style={styles.atcIcon} 
+                />
+                <Text style={styles.atcLabel}>
+                  {questionMode ? "ATC QUESTION:" : "ATC COMMAND:"}
+                </Text>
+              </View>
+              <Text style={styles.atcText}>
+                {questionMode ? currentQuestion : currentCommand}
+              </Text>
+            </View>
+          )}
+
+          {/* Hidden Readback Display - Only visible when not waiting for response */}
+          {transcribedText && !isWaitingForResponse && (
             <View style={styles.readbackDisplay}>
-              <Text style={styles.readbackLabel}>READBACK:</Text>
+              <Text style={styles.readbackLabel}>YOUR RESPONSE:</Text>
               <Text style={styles.readbackText} numberOfLines={2} ellipsizeMode="tail">
                 {transcribedText}
               </Text>
@@ -491,48 +526,111 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontFamily: 'monospace',
   },
-  overlayFeedback: {
+  feedbackOverlay: {
     position: 'absolute',
-    top: 70,
-    right: 20,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 2,
-    zIndex: 10,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 15,
   },
-  overlayFeedbackText: {
-    fontSize: 12,
+  feedbackContainer: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 20,
+    paddingHorizontal: 30,
+    paddingVertical: 25,
+    alignItems: 'center',
+    borderWidth: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    minWidth: 200,
+  },
+  feedbackMainText: {
+    fontSize: 24,
     fontWeight: 'bold',
     fontFamily: 'monospace',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  feedbackSubText: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    fontFamily: 'monospace',
+    marginTop: 8,
+    textAlign: 'center',
   },
   communicationPanel: {
     backgroundColor: '#1a1a1a',
     borderTopWidth: 2,
     borderTopColor: '#333',
     paddingHorizontal: 10,
-    paddingVertical: 8,
-    minHeight: 50,
+    paddingVertical: 12,
+    minHeight: 80,
     marginHorizontal: 0,
+  },
+  atcDisplay: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 10,
+    padding: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFA500',
+    marginBottom: 10,
+    shadowColor: '#FFA500',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  atcHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  atcIcon: {
+    marginRight: 8,
+  },
+  atcLabel: {
+    color: '#FFA500',
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+  },
+  atcText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+    lineHeight: 22,
   },
   readbackDisplay: {
     backgroundColor: '#2a2a2a',
-    borderRadius: 6,
-    padding: 10,
+    borderRadius: 8,
+    padding: 12,
     borderLeftWidth: 3,
     borderLeftColor: '#00A86B',
+    shadowColor: '#00A86B',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   readbackLabel: {
-    color: '#888',
-    fontSize: 10,
+    color: '#00A86B',
+    fontSize: 11,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 6,
     fontFamily: 'monospace',
+    textTransform: 'uppercase',
   },
   readbackText: {
     color: '#FFFFFF',
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: 'monospace',
   },
   statusContainer: {
     margin: 20,

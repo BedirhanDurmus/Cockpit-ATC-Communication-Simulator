@@ -48,7 +48,7 @@ export default function NavigationDisplay({
     { x: 680, y: 320 },
     { x: 750, y: 400 },
   ];
-
+  
   return (
     <View style={styles.container}>
       {/* Professional Navigation Display */}
@@ -92,7 +92,7 @@ export default function NavigationDisplay({
 
         {/* Compass Rose */}
         <G transform={`translate(${aircraftX}, ${aircraftY})`}>
-          {/* Outer compass ring */}
+        {/* Outer compass ring */}
           <Circle cx="0" cy="0" r="340" fill="none" stroke="#00FF00" strokeWidth="2" />
           
           {/* Compass markings */}
@@ -104,8 +104,8 @@ export default function NavigationDisplay({
             const y1 = Math.sin(radian) * 330;
             const x2 = Math.cos(radian) * (isMajor ? 345 : 340);
             const y2 = Math.sin(radian) * (isMajor ? 345 : 340);
-            
-            return (
+          
+          return (
               <G key={angle}>
                 <Line 
                   x1={x1} y1={y1} x2={x2} y2={y2} 
@@ -113,21 +113,21 @@ export default function NavigationDisplay({
                   strokeWidth={isMajor ? "3" : "1"} 
                 />
                 {isMajor && (
-                  <SvgText 
+            <SvgText
                     x={Math.cos(radian) * 360} 
                     y={Math.sin(radian) * 360 + 6} 
                     fill="#00FF00" 
                     fontSize="16" 
                     fontFamily="monospace"
                     textAnchor="middle"
-                    fontWeight="bold"
-                  >
+              fontWeight="bold"
+            >
                     {angle.toString().padStart(3, '0')}
-                  </SvgText>
+            </SvgText>
                 )}
               </G>
-            );
-          })}
+          );
+        })}
         </G>
 
         {/* Flight Plan Route */}
@@ -148,12 +148,12 @@ export default function NavigationDisplay({
                   points={`${wp.x},${wp.y-12} ${wp.x+10},${wp.y+8} ${wp.x-10},${wp.y+8}`}
                   fill="#00FFFF" 
                   stroke="#000" 
-                  strokeWidth="2"
-                />
-                <SvgText 
-                  x={wp.x} 
+              strokeWidth="2" 
+            />
+            <SvgText
+              x={wp.x}
                   y={wp.y + 25} 
-                  fill="#00FFFF" 
+              fill="#00FFFF"
                   fontSize="12" 
                   fontFamily="monospace"
                   textAnchor="middle"
@@ -195,18 +195,18 @@ export default function NavigationDisplay({
                   x={wp.x} 
                   y={wp.y + 22} 
                   fill="#00FF00" 
-                  fontSize="10" 
+              fontSize="10"
                   fontFamily="monospace"
-                  textAnchor="middle"
+              textAnchor="middle"
                   fontWeight="bold"
-                >
-                  {wp.name}
-                </SvgText>
+            >
+              {wp.name}
+            </SvgText>
               </>
             )}
           </G>
         ))}
-
+        
         {/* Traffic (TCAS) */}
         {tcasEnabled && traffic.map((t, index) => {
           const altDiff = Math.abs(t.altitude - altitude);
@@ -337,7 +337,7 @@ export default function NavigationDisplay({
           </SvgText>
         </G>
       </Svg>
-
+      
       {/* Professional Data Display */}
       <View style={styles.dataPanel}>
         <View style={styles.dataGroup}>
