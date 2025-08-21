@@ -100,24 +100,53 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const speakText = useCallback((text: string) => {
     if (Platform.OS === 'web') {
-      const utterance = new SpeechSynthesisUtterance(text);
-      const voices = speechSynthesis.getVoices();
-      // Find American English voice
-      const americanVoice = voices.find(voice => 
-        voice.lang.includes('en-US') || voice.name.includes('US')
-      );
-      if (americanVoice) {
-        utterance.voice = americanVoice;
+      // Wait for voices to load on web
+      const speakWithVoice = () => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        const voices = speechSynthesis.getVoices();
+        
+        // Force American English voice - be more specific
+        const americanVoice = voices.find(voice => 
+          (voice.lang === 'en-US' || voice.lang.startsWith('en-US')) &&
+          (voice.name.includes('Google') || voice.name.includes('Microsoft') || voice.name.includes('Alex') || voice.name.includes('Samantha'))
+        ) || voices.find(voice => voice.lang === 'en-US');
+        
+        if (americanVoice) {
+          utterance.voice = americanVoice;
+          utterance.lang = 'en-US';
+        } else {
+          // Fallback to first English voice
+          const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
+          if (englishVoice) {
+            utterance.voice = englishVoice;
+            utterance.lang = 'en-US';
+          }
+        }
+        
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        speechSynthesis.speak(utterance);
+      };
+
+      // Check if voices are already loaded
+      if (speechSynthesis.getVoices().length > 0) {
+        speakWithVoice();
+      } else {
+        // Wait for voices to load
+        speechSynthesis.onvoiceschanged = () => {
+          speakWithVoice();
+          speechSynthesis.onvoiceschanged = null;
+        };
       }
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
-      speechSynthesis.speak(utterance);
     } else {
-      // Use Expo Speech for mobile platforms
+      // Use Expo Speech for mobile platforms - force American English
       Speech.speak(text, {
         language: 'en-US',
         pitch: 1.0,
         rate: 0.9,
+        quality: 'Enhanced',
+        voice: 'en-us-x-sfg#male_1-local', // Force US voice if available
       });
     }
   }, []);
@@ -203,6 +232,36 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const startCommandSequence = useCallback(() => {
+    // Issue first command immediately after voices are ready
+    const issueFirstCommand = () => {
+      // Check if we're not already waiting for a response
+      setIsWaitingForResponse(waiting => {
+        setQuestionMode(qMode => {
+          if (!waiting && !qMode) {
+            issueRandomCommand();
+          }
+          return qMode;
+        });
+        return waiting;
+      });
+    };
+
+    if (Platform.OS === 'web') {
+      // Wait for voices to load on web, then issue first command
+      if (speechSynthesis.getVoices().length > 0) {
+        setTimeout(issueFirstCommand, 500);
+      } else {
+        speechSynthesis.onvoiceschanged = () => {
+          setTimeout(issueFirstCommand, 500);
+          speechSynthesis.onvoiceschanged = null;
+        };
+      }
+    } else {
+      // On mobile, issue immediately
+      setTimeout(issueFirstCommand, 500);
+    }
+    
+    // Then continue with interval for subsequent commands
     commandInterval.current = setInterval(() => {
       setIsWaitingForResponse(waiting => {
         setQuestionMode(qMode => {
@@ -249,6 +308,13 @@ export const TrainingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [session.isActive, startFlightDataSimulation, startCommandSequence, startQuestionSequence, stopAllIntervals]);
 
   const startSession = useCallback(() => {
+    // Initialize voices on web before starting session
+    if (Platform.OS === 'web' && speechSynthesis.getVoices().length === 0) {
+      speechSynthesis.onvoiceschanged = () => {
+        speechSynthesis.onvoiceschanged = null;
+      };
+    }
+    
     setSession({
       isActive: true,
       startTime: Date.now(),
