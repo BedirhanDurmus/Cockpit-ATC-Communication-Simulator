@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Dimensions, useColorScheme, Platform } from "react-native";
+import { View, Text, StyleSheet, Dimensions, useColorScheme, Platform, TouchableOpacity } from "react-native";
 import Svg, { 
   Line, Path, Text as SvgText, G, Rect, Circle, Polygon, 
   Defs, LinearGradient, Stop, ClipPath, RadialGradient, Filter, 
@@ -81,7 +81,8 @@ export default function PrimaryFlightDisplay({
   }, []);
 
   const colorScheme = useColorScheme();
-  const dimMode = colorScheme === 'dark';
+  const [manualDim, setManualDim] = useState<null | boolean>(null);
+  const dimMode = (manualDim === null) ? (colorScheme === 'dark') : manualDim;
   const uiFont = Platform.select({ ios: 'System', android: 'sans-serif' }) || 'System';
   const stallSpeed = 120;
   const overspeed = 460;
@@ -89,6 +90,7 @@ export default function PrimaryFlightDisplay({
   const machNumber = (speed * 0.00147).toFixed(3);
   const baroSetting = 29.92;
   const radioAlt = Math.max(0, altitude - 1500); // Decision Height simulation
+  const decisionAltitude = 200;
 
   return (
     <View style={styles.container}>
@@ -366,7 +368,7 @@ export default function PrimaryFlightDisplay({
               x2="620" 
               y2={310 - pitch * 12 + 2} 
               stroke="#B8860B" 
-              strokeWidth="6" 
+              strokeWidth="7" 
               opacity="0.4"
             />
             <Line 
@@ -375,7 +377,7 @@ export default function PrimaryFlightDisplay({
               x2="620" 
               y2={310 - pitch * 12} 
               stroke="#FFD700" 
-              strokeWidth="6"
+              strokeWidth="7"
             />
 
             {/* Ultra-Enhanced Pitch Scale */}
@@ -407,7 +409,7 @@ export default function PrimaryFlightDisplay({
                     x2={endX} 
                     y2={y} 
                     stroke="#FFFFFF" 
-                    strokeWidth={isMinor ? "2" : "4"}
+                    strokeWidth={isMinor ? "3" : "5"}
                   />
                   
                   {/* Pitch value labels */}
@@ -418,7 +420,7 @@ export default function PrimaryFlightDisplay({
                         x={startX - 29} 
                         y={y + 8} 
                         fill="#000" 
-                        fontSize="20" 
+                        fontSize="22" 
                         fontFamily="monospace"
                         fontWeight="bold"
                         opacity="0.4"
@@ -429,7 +431,7 @@ export default function PrimaryFlightDisplay({
                         x={startX - 30} 
                         y={y + 7} 
                         fill="#FFFFFF" 
-                        fontSize="20" 
+                        fontSize="22" 
                         fontFamily="monospace"
                         fontWeight="bold"
                       >
@@ -440,7 +442,7 @@ export default function PrimaryFlightDisplay({
                         x={endX + 16} 
                         y={y + 8} 
                         fill="#000" 
-                        fontSize="20" 
+                        fontSize="22" 
                         fontFamily="monospace"
                         fontWeight="bold"
                         opacity="0.4"
@@ -451,7 +453,7 @@ export default function PrimaryFlightDisplay({
                         x={endX + 15} 
                         y={y + 7} 
                         fill="#FFFFFF" 
-                        fontSize="20" 
+                        fontSize="22" 
                         fontFamily="monospace"
                         fontWeight="bold"
                       >
@@ -693,31 +695,31 @@ export default function PrimaryFlightDisplay({
         </SvgText>
 
         {/* === ENHANCED FLIGHT MODE ANNUNCIATORS === */}
-        <G transform="translate(80, 25)">
+        <G transform="translate(90, 25)">
           {/* Autopilot Modes */}
-          <Rect x="0" y="0" width="90" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
-          <SvgText x="45" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="0" y="0" width="80" height="22" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="40" y="16" fill="#000" fontSize="11" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             A/P
           </SvgText>
           
-          <Rect x="200" y="0" width="90" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
-          <SvgText x="245" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="200" y="0" width="80" height="22" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="240" y="16" fill="#000" fontSize="11" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             LNAV
           </SvgText>
           
-          <Rect x="400" y="0" width="90" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
-          <SvgText x="445" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="400" y="0" width="80" height="22" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="440" y="16" fill="#000" fontSize="11" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             VNAV
           </SvgText>
 
-          <Rect x="600" y="0" width="90" height="25" fill="#FFFF00" rx="4" stroke="#000" strokeWidth="2" />
-          <SvgText x="645" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="600" y="0" width="80" height="22" fill="#FFFF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="640" y="16" fill="#000" fontSize="11" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             APP
           </SvgText>
         </G>
 
         {/* === DECISION HEIGHT WARNING === */}
-        {radioAlt < 1000 && (
+        {radioAlt > 0 && radioAlt < decisionAltitude && (
           <G transform="translate(350, 100)">
             <Rect x="0" y="0" width="100" height="25" fill="#FF0000" rx="3" stroke="#FFF" strokeWidth="2" />
             <SvgText x="50" y="18" fill="#FFF" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
@@ -726,6 +728,11 @@ export default function PrimaryFlightDisplay({
           </G>
         )}
       </Svg>
+
+      {/* Bright / Dim toggle */}
+      <TouchableOpacity style={styles.dimToggle} onPress={() => setManualDim(prev => prev === null ? true : !prev)}>
+        <Text style={styles.dimToggleText}>{dimMode ? "DIM" : "BRIGHT"}</Text>
+      </TouchableOpacity>
 
       {/* Enhanced Bottom Information Bar with More Data */}
       <View style={styles.infoBar}>
@@ -773,6 +780,23 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     minHeight: 400,
     width: '100%',
+  },
+  dimToggle: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#111',
+    borderWidth: 2,
+    borderColor: '#444',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  dimToggleText: {
+    color: '#0f0',
+    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }) || undefined,
+    fontWeight: '700',
+    fontSize: 12,
   },
   infoBar: {
     flexDirection: 'row',
