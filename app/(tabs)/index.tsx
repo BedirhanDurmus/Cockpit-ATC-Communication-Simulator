@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import PrimaryFlightDisplay from "../../components/PrimaryFlightDisplay";
+import NavigationDisplay from "../../components/NavigationDisplay";
 import { useTrainingSession } from "@/hooks/useTrainingSession";
 
 export default function TrainingScreen() {
@@ -285,37 +286,49 @@ export default function TrainingScreen() {
       </View>
 
       <View style={styles.cockpitContainer}>
-        {/* PFD Display - Full Screen */}
-        <View style={styles.pfdDisplayArea}>
-          <PrimaryFlightDisplay
-            altitude={flightData.altitude}
-            heading={flightData.heading}
-            speed={flightData.speed}
-            verticalSpeed={flightData.verticalSpeed}
-          />
-          
-          {/* Overlay Status Messages - Non-intrusive */}
-          {isWaitingForResponse && (
-            <View style={styles.overlayStatus}>
-              <View style={styles.statusIndicator}>
-                <Ionicons name="volume-high" color="#FFA500" size={16} />
-                <Text style={styles.overlayStatusText}>
-                  {questionMode ? "ATC QUESTION" : "ATC COMMAND"}
+        {/* Dual Display Layout - PFD + Navigation Display */}
+        <View style={styles.displayRow}>
+          {/* PFD Display - Left Side */}
+          <View style={styles.pfdDisplayArea}>
+            <PrimaryFlightDisplay
+              altitude={flightData.altitude}
+              heading={flightData.heading}
+              speed={flightData.speed}
+              verticalSpeed={flightData.verticalSpeed}
+            />
+            
+            {/* Overlay Status Messages - Non-intrusive */}
+            {isWaitingForResponse && (
+              <View style={styles.overlayStatus}>
+                <View style={styles.statusIndicator}>
+                  <Ionicons name="volume-high" color="#FFA500" size={16} />
+                  <Text style={styles.overlayStatusText}>
+                    {questionMode ? "ATC QUESTION" : "ATC COMMAND"}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {lastFeedback && (
+              <View style={[
+                styles.overlayFeedback,
+                lastFeedback.isCorrect ? styles.feedbackCorrect : styles.feedbackIncorrect
+              ]}>
+                <Text style={styles.overlayFeedbackText}>
+                  {lastFeedback.isCorrect ? "✓ CORRECT" : "✗ INCORRECT"}
                 </Text>
               </View>
-            </View>
-          )}
+            )}
+          </View>
 
-          {lastFeedback && (
-            <View style={[
-              styles.overlayFeedback,
-              lastFeedback.isCorrect ? styles.feedbackCorrect : styles.feedbackIncorrect
-            ]}>
-              <Text style={styles.overlayFeedbackText}>
-                {lastFeedback.isCorrect ? "✓ CORRECT" : "✗ INCORRECT"}
-              </Text>
-            </View>
-          )}
+          {/* Navigation Display - Right Side */}
+          <View style={styles.navDisplayArea}>
+            <NavigationDisplay
+              heading={flightData.heading}
+              speed={flightData.speed}
+              altitude={flightData.altitude}
+            />
+          </View>
         </View>
 
         {/* Bottom Communication Panel */}
@@ -436,11 +449,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#0a0a0a",
     paddingHorizontal: 10,
   },
+  displayRow: {
+    flexDirection: 'row',
+    flex: 1,
+    gap: 10,
+    minHeight: 400,
+  },
   pfdDisplayArea: {
     flex: 1,
     position: 'relative',
     minHeight: 400,
-    marginHorizontal: 0,
+  },
+  navDisplayArea: {
+    flex: 1,
+    position: 'relative',
+    minHeight: 400,
   },
   overlayStatus: {
     position: 'absolute',
@@ -618,18 +641,22 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   controlPanel: {
-    backgroundColor: "#2a2a2a",
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-    borderTopWidth: 3,
-    borderTopColor: "#444",
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
+    backgroundColor: "#1a1a1a",
+    paddingHorizontal: 12,
+    paddingVertical: 15,
+    borderTopWidth: 4,
+    borderTopColor: "#555",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
     marginHorizontal: 0,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    borderLeftColor: "#333",
+    borderRightColor: "#333",
   },
   controlPanelTop: {
     flexDirection: "row",
@@ -637,17 +664,24 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   analogMeter: {
-    backgroundColor: "#1a1a1a",
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#555",
+    backgroundColor: "#0d1117",
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 3,
+    borderTopColor: "#666",
+    borderLeftColor: "#666",
+    borderRightColor: "#333",
+    borderBottomColor: "#333",
     alignItems: "center",
-    minWidth: 60,
+    minWidth: 65,
     flex: 1,
-    marginHorizontal: 2,
-    minHeight: 50,
+    marginHorizontal: 3,
+    minHeight: 55,
+    shadowColor: "#000",
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
   },
   meterLabel: {
     color: "#888",
@@ -670,55 +704,67 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   startTrainingButton: {
-    backgroundColor: "#2d5016",
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#4a7c2a",
+    backgroundColor: "#1a4a1a",
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    borderRadius: 15,
+    borderWidth: 4,
+    borderTopColor: "#4a7c2a",
+    borderLeftColor: "#4a7c2a",
+    borderRightColor: "#1a3a1a",
+    borderBottomColor: "#1a3a1a",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
     flex: 1,
-    minHeight: 65,
+    minHeight: 70,
   },
   pttButton: {
-    backgroundColor: "#1a1a1a",
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#555",
+    backgroundColor: "#2a2a2a",
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    borderRadius: 15,
+    borderWidth: 4,
+    borderTopColor: "#666",
+    borderLeftColor: "#666",
+    borderRightColor: "#111",
+    borderBottomColor: "#111",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
     flex: 1,
-    minHeight: 65,
+    minHeight: 70,
   },
   pttActive: {
     backgroundColor: "#4a0e0e",
-    borderColor: "#dc2626",
+    borderTopColor: "#dc2626",
+    borderLeftColor: "#dc2626",
+    borderRightColor: "#2a0606",
+    borderBottomColor: "#2a0606",
     shadowColor: "#dc2626",
-    shadowOpacity: 0.6,
+    shadowOpacity: 0.8,
   },
   endSessionButton: {
-    backgroundColor: "#3d1a1a",
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#7a2e2e",
+    backgroundColor: "#4a1a1a",
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    borderRadius: 15,
+    borderWidth: 4,
+    borderTopColor: "#7a2e2e",
+    borderLeftColor: "#7a2e2e",
+    borderRightColor: "#2a1111",
+    borderBottomColor: "#2a1111",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
     flex: 1,
-    minHeight: 65,
+    minHeight: 70,
   },
   buttonLED: {
     width: 8,
@@ -768,15 +814,22 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusLight: {
-    backgroundColor: "#1a1a1a",
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#333",
+    backgroundColor: "#0d1117",
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderTopColor: "#444",
+    borderLeftColor: "#444",
+    borderRightColor: "#222",
+    borderBottomColor: "#222",
     alignItems: "center",
     flex: 1,
-    minHeight: 35,
+    minHeight: 40,
+    shadowColor: "#000",
+    shadowOffset: { width: 1, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
   },
   statusLightActive: {
     backgroundColor: "#1a4a1a",

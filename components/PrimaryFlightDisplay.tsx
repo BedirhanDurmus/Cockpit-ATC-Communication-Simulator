@@ -45,7 +45,7 @@ export default function PrimaryFlightDisplay({
   return (
     <View style={styles.container}>
       {/* Ultra-Premium PFD Display */}
-      <Svg width="100%" height="100%" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid meet">
+      <Svg width="100%" height="100%" viewBox="0 0 800 700" preserveAspectRatio="xMidYMid meet">
         <Defs>
           {/* Enhanced Sky Gradient with Realistic Colors */}
           <LinearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -75,7 +75,7 @@ export default function PrimaryFlightDisplay({
 
           {/* Attitude Indicator Clip */}
           <ClipPath id="attitudeClip">
-            <Rect x="200" y="120" width="800" height="380" rx="20" />
+            <Rect x="180" y="120" width="440" height="380" rx="20" />
           </ClipPath>
 
           {/* Speed Tape Clip */}
@@ -85,13 +85,13 @@ export default function PrimaryFlightDisplay({
 
           {/* Altitude Tape Clip */}
           <ClipPath id="altitudeClip">
-            <Rect x="1035" y="120" width="150" height="380" />
+            <Rect x="635" y="120" width="150" height="380" />
           </ClipPath>
         </Defs>
 
         {/* Background with Bezel Effect */}
-        <Rect x="0" y="0" width="1200" height="700" fill="#000" />
-        <Rect x="5" y="5" width="1190" height="690" fill="#0a0a0a" stroke="#333" strokeWidth="2" rx="25" />
+        <Rect x="0" y="0" width="800" height="700" fill="#000" />
+        <Rect x="5" y="5" width="790" height="690" fill="#0a0a0a" stroke="#333" strokeWidth="2" rx="25" />
 
         {/* === ENHANCED SPEED TAPE === */}
         <G clipPath="url(#speedClip)">
@@ -173,7 +173,7 @@ export default function PrimaryFlightDisplay({
 
         {/* === ENHANCED ALTITUDE TAPE === */}
         <G clipPath="url(#altitudeClip)">
-          <Rect x="1035" y="120" width="150" height="380" fill="#0d1117" stroke="#30363d" strokeWidth="2" rx="10" />
+          <Rect x="635" y="120" width="150" height="380" fill="#0d1117" stroke="#30363d" strokeWidth="2" rx="10" />
           
           {/* Altitude Scale */}
           {Array.from({ length: 20 }, (_, i) => {
@@ -187,7 +187,7 @@ export default function PrimaryFlightDisplay({
                 {/* Background for current altitude area */}
                 {isCurrent && (
                   <Rect 
-                    x="1035" 
+                    x="635" 
                     y={y - 10} 
                     width="150" 
                     height="20" 
@@ -197,9 +197,9 @@ export default function PrimaryFlightDisplay({
                 
                 {/* Tick marks */}
                 <Line 
-                  x1="1120" 
+                  x1="720" 
                   y1={y} 
-                  x2={isMainTick ? "1180" : "1170"} 
+                  x2={isMainTick ? "780" : "770"} 
                   y2={y} 
                   stroke={isCurrent ? "#00FF00" : "#FFFFFF"} 
                   strokeWidth={isMainTick ? "3" : "2"} 
@@ -208,7 +208,7 @@ export default function PrimaryFlightDisplay({
                 {/* Altitude values */}
                 {isMainTick && (
                   <SvgText 
-                    x="1110" 
+                    x="710" 
                     y={y + 6} 
                     fill={isCurrent ? "#00FF00" : "#FFFFFF"} 
                     fontSize="16" 
@@ -225,7 +225,7 @@ export default function PrimaryFlightDisplay({
 
           {/* Target Altitude Bug - Enhanced */}
           <Polygon 
-            points={`1030,${290 + (targetAltitude - altitude) * 0.019} 1020,${295 + (targetAltitude - altitude) * 0.019} 1020,${285 + (targetAltitude - altitude) * 0.019}`}
+            points={`630,${290 + (targetAltitude - altitude) * 0.019} 620,${295 + (targetAltitude - altitude) * 0.019} 620,${285 + (targetAltitude - altitude) * 0.019}`}
             fill="#FF00FF" 
             stroke="#000"
             strokeWidth="2"
@@ -233,66 +233,66 @@ export default function PrimaryFlightDisplay({
         </G>
 
         {/* Current Altitude Digital Readout - Enhanced */}
-        <Rect x="1037" y="292" width="155" height="45" fill="#333" rx="8" opacity="0.3" />
-        <Rect x="1035" y="290" width="155" height="45" fill="#000" stroke="#00FF00" strokeWidth="3" rx="8" />
-        <Rect x="1040" y="295" width="145" height="35" fill="url(#instrumentGlow)" rx="5" />
-        <SvgText x="1112" y="320" fill="#00FF00" fontSize="28" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <Rect x="637" y="292" width="155" height="45" fill="#333" rx="8" opacity="0.3" />
+        <Rect x="635" y="290" width="155" height="45" fill="#000" stroke="#00FF00" strokeWidth="3" rx="8" />
+        <Rect x="640" y="295" width="145" height="35" fill="url(#instrumentGlow)" rx="5" />
+        <SvgText x="712" y="320" fill="#00FF00" fontSize="28" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
           {Math.round(altitude)}
         </SvgText>
 
         {/* Barometric Setting */}
-        <Rect x="1035" y="350" width="150" height="30" fill="#000" stroke="#30363d" strokeWidth="2" rx="5" />
-        <SvgText x="1110" y="370" fill="#00FFFF" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <Rect x="635" y="350" width="150" height="30" fill="#000" stroke="#30363d" strokeWidth="2" rx="5" />
+        <SvgText x="710" y="370" fill="#00FFFF" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
           {baroSetting.toFixed(2)}
         </SvgText>
 
         {/* Radio Altitude */}
-        <Rect x="1035" y="385" width="150" height="30" fill="#000" stroke="#30363d" strokeWidth="2" rx="5" />
-        <SvgText x="1110" y="405" fill="#FFFF00" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <Rect x="635" y="385" width="150" height="30" fill="#000" stroke="#30363d" strokeWidth="2" rx="5" />
+        <SvgText x="710" y="405" fill="#FFFF00" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
           RA {Math.round(radioAlt)}
         </SvgText>
 
         {/* Flight Level Display - Enhanced */}
-        <Rect x="1035" y="60" width="150" height="40" fill="#000" stroke="#30363d" strokeWidth="2" rx="8" />
-        <SvgText x="1110" y="85" fill="#00FFFF" fontSize="18" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <Rect x="635" y="60" width="150" height="40" fill="#000" stroke="#30363d" strokeWidth="2" rx="8" />
+        <SvgText x="710" y="85" fill="#00FFFF" fontSize="18" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
           FL{flightLevel}
         </SvgText>
 
         {/* === ULTRA-ENHANCED ATTITUDE INDICATOR === */}
         <G clipPath="url(#attitudeClip)">
-          <G transform={`translate(600, 310) rotate(${roll}) translate(-600, -310)`}>
+          <G transform={`translate(400, 310) rotate(${roll}) translate(-400, -310)`}>
             {/* Sky with Enhanced Gradient */}
             <Rect 
-              x="200" 
+              x="180" 
               y={120 - pitch * 12} 
-              width="800" 
+              width="440" 
               height={190 + pitch * 12} 
               fill="url(#skyGradient)" 
             />
             
             {/* Ground with Enhanced Gradient */}
             <Rect 
-              x="200" 
+              x="180" 
               y={310 - pitch * 12} 
-              width="800" 
+              width="440" 
               height={190 + pitch * 12} 
               fill="url(#groundGradient)" 
             />
 
             {/* Enhanced Horizon Line with Shadow Effect */}
             <Line 
-              x1="200" 
+              x1="180" 
               y1={310 - pitch * 12 + 2} 
-              x2="1000" 
+              x2="620" 
               y2={310 - pitch * 12 + 2} 
               stroke="#B8860B" 
               strokeWidth="6" 
               opacity="0.4"
             />
             <Line 
-              x1="200" 
+              x1="180" 
               y1={310 - pitch * 12} 
-              x2="1000" 
+              x2="620" 
               y2={310 - pitch * 12} 
               stroke="#FFD700" 
               strokeWidth="6"
@@ -301,9 +301,9 @@ export default function PrimaryFlightDisplay({
             {/* Ultra-Enhanced Pitch Scale */}
             {[-30, -20, -10, -5, 5, 10, 20, 30].map((pitchValue) => {
               const y = 310 - pitchValue * 12 - pitch * 12;
-              const lineLength = Math.abs(pitchValue) === 10 || Math.abs(pitchValue) === 20 ? 300 : 180;
-              const startX = 600 - lineLength / 2;
-              const endX = 600 + lineLength / 2;
+              const lineLength = Math.abs(pitchValue) === 10 || Math.abs(pitchValue) === 20 ? 160 : 100;
+              const startX = 400 - lineLength / 2;
+              const endX = 400 + lineLength / 2;
               const isMinor = Math.abs(pitchValue) === 5;
               
               return (
@@ -386,32 +386,32 @@ export default function PrimaryFlightDisplay({
         </G>
 
         {/* Attitude Indicator Frame with Bezel */}
-        <Rect x="200" y="120" width="800" height="380" fill="none" stroke="#666" strokeWidth="4" rx="20" />
-        <Rect x="205" y="125" width="790" height="370" fill="none" stroke="#999" strokeWidth="2" rx="15" />
+        <Rect x="180" y="120" width="440" height="380" fill="none" stroke="#666" strokeWidth="4" rx="20" />
+        <Rect x="185" y="125" width="430" height="370" fill="none" stroke="#999" strokeWidth="2" rx="15" />
 
         {/* === ULTRA-ENHANCED AIRCRAFT SYMBOL === */}
         <G>
           {/* Main wings - Ultra thick and prominent */}
-          <Line x1="420" y1="310" x2="780" y2="310" stroke="#FFD700" strokeWidth="12" />
-          <Line x1="420" y1="310" x2="780" y2="310" stroke="#FFA500" strokeWidth="8" />
+          <Line x1="300" y1="310" x2="500" y2="310" stroke="#FFD700" strokeWidth="12" />
+          <Line x1="300" y1="310" x2="500" y2="310" stroke="#FFA500" strokeWidth="8" />
           
           {/* Center fuselage */}
-          <Ellipse cx="600" cy="310" rx="12" ry="8" fill="#FFD700" stroke="#000" strokeWidth="3" />
+          <Ellipse cx="400" cy="310" rx="12" ry="8" fill="#FFD700" stroke="#000" strokeWidth="3" />
           
           {/* Nose pointer - Larger and more visible */}
-          <Polygon points="600,285 615,305 585,305" fill="#FFD700" stroke="#000" strokeWidth="2" />
+          <Polygon points="400,285 415,305 385,305" fill="#FFD700" stroke="#000" strokeWidth="2" />
           
           {/* Wing ends - More prominent */}
-          <Rect x="400" y="305" width="25" height="10" fill="#FFD700" stroke="#000" strokeWidth="2" />
-          <Rect x="775" y="305" width="25" height="10" fill="#FFD700" stroke="#000" strokeWidth="2" />
+          <Rect x="285" y="305" width="20" height="10" fill="#FFD700" stroke="#000" strokeWidth="2" />
+          <Rect x="495" y="305" width="20" height="10" fill="#FFD700" stroke="#000" strokeWidth="2" />
           
           {/* Center reference dot */}
-          <Circle cx="600" cy="310" r="8" fill="#000" stroke="#FFD700" strokeWidth="3" />
-          <Circle cx="600" cy="310" r="4" fill="#FFD700" />
+          <Circle cx="400" cy="310" r="8" fill="#000" stroke="#FFD700" strokeWidth="3" />
+          <Circle cx="400" cy="310" r="4" fill="#FFD700" />
         </G>
 
         {/* === ULTRA-ENHANCED BANK ANGLE SCALE === */}
-        <G transform="translate(600, 140)">
+        <G transform="translate(400, 140)">
           {/* Bank angle arc */}
           <Path 
             d="M -80 0 A 80 80 0 0 1 80 0" 
@@ -482,58 +482,58 @@ export default function PrimaryFlightDisplay({
 
         {/* === ILS/LOC DEVIATION INDICATORS === */}
         {/* Localizer Scale */}
-        <G transform="translate(600, 480)">
-          <Rect x="-150" y="-5" width="300" height="10" fill="#1a1a1a" stroke="#666" strokeWidth="2" rx="5" />
+        <G transform="translate(400, 480)">
+          <Rect x="-80" y="-5" width="160" height="10" fill="#1a1a1a" stroke="#666" strokeWidth="2" rx="5" />
           {[-2, -1, 0, 1, 2].map((dot) => (
             <Circle 
               key={dot}
-              cx={dot * 35} 
+              cx={dot * 20} 
               cy="0" 
-              r="6" 
+              r="5" 
               fill={Math.abs(dot - localizer) < 0.3 ? "#FF00FF" : "#333"} 
               stroke="#666" 
               strokeWidth="2"
             />
           ))}
-          <SvgText x="0" y="25" fill="#FFFFFF" fontSize="12" textAnchor="middle" fontWeight="bold">LOC</SvgText>
+          <SvgText x="0" y="20" fill="#FFFFFF" fontSize="11" textAnchor="middle" fontWeight="bold">LOC</SvgText>
         </G>
 
         {/* Glideslope Scale */}
-        <G transform="translate(980, 310)">
-          <Rect x="-5" y="-100" width="10" height="200" fill="#1a1a1a" stroke="#666" strokeWidth="2" rx="5" />
+        <G transform="translate(580, 310)">
+          <Rect x="-5" y="-80" width="10" height="160" fill="#1a1a1a" stroke="#666" strokeWidth="2" rx="5" />
           {[-2, -1, 0, 1, 2].map((dot) => (
             <Circle 
               key={dot}
               cx="0" 
-              cy={dot * 25} 
-              r="6" 
+              cy={dot * 20} 
+              r="5" 
               fill={Math.abs(dot - glideslope) < 0.3 ? "#FF00FF" : "#333"} 
               stroke="#666" 
               strokeWidth="2"
             />
           ))}
-          <SvgText x="25" y="5" fill="#FFFFFF" fontSize="12" textAnchor="middle" fontWeight="bold">G/S</SvgText>
+          <SvgText x="20" y="5" fill="#FFFFFF" fontSize="11" textAnchor="middle" fontWeight="bold">G/S</SvgText>
         </G>
 
         {/* === ENHANCED VERTICAL SPEED INDICATOR === */}
-        <Rect x="1050" y="520" width="100" height="120" fill="#0d1117" stroke="#30363d" strokeWidth="2" rx="8" />
-        <SvgText x="1100" y="540" fill="#FFFFFF" fontSize="16" fontFamily="monospace" textAnchor="middle" fontWeight="bold">VS</SvgText>
+        <Rect x="650" y="520" width="80" height="100" fill="#0d1117" stroke="#30363d" strokeWidth="2" rx="8" />
+        <SvgText x="690" y="535" fill="#FFFFFF" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">VS</SvgText>
         
         {/* VS Scale - Enhanced */}
         {[-2000, -1000, -500, 0, 500, 1000, 2000].map((vs, i) => {
-          const y = 550 + (i * 12);
+          const y = 545 + (i * 10);
           const isZero = vs === 0;
                       return (
               <G key={vs}>
                 <Line 
-                  x1={isZero ? "1060" : "1070"} 
+                  x1={isZero ? "655" : "665"} 
                   y1={y} 
-                  x2={isZero ? "1140" : "1080"} 
+                  x2={isZero ? "720" : "675"} 
                   y2={y} 
                   stroke="#FFFFFF" 
-                  strokeWidth={isZero ? "4" : "2"} 
+                  strokeWidth={isZero ? "3" : "1"} 
                 />
-                <SvgText x="1085" y={y + 4} fill="#FFFFFF" fontSize="11" fontFamily="monospace" textAnchor="start">
+                <SvgText x="680" y={y + 3} fill="#FFFFFF" fontSize="9" fontFamily="monospace" textAnchor="start">
                   {Math.abs(vs / 1000)}
                 </SvgText>
               </G>
@@ -541,19 +541,19 @@ export default function PrimaryFlightDisplay({
           })}
 
         {/* Current VS Digital Display */}
-        <Rect x="1055" y="575" width="90" height="25" fill="#000" stroke="#666" strokeWidth="2" rx="3" />
-        <SvgText x="1100" y="592" fill={verticalSpeed > 0 ? "#00FF00" : verticalSpeed < 0 ? "#FF0000" : "#FFFFFF"} 
-                 fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <Rect x="655" y="580" width="70" height="20" fill="#000" stroke="#666" strokeWidth="2" rx="3" />
+        <SvgText x="690" y="594" fill={verticalSpeed > 0 ? "#00FF00" : verticalSpeed < 0 ? "#FF0000" : "#FFFFFF"} 
+                 fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
           {verticalSpeed > 0 ? "+" : ""}{Math.round(verticalSpeed)}
         </SvgText>
 
         {/* === ENHANCED HEADING INDICATOR === */}
-        <Rect x="350" y="520" width="500" height="60" fill="#0d1117" stroke="#30363d" strokeWidth="2" rx="10" />
+        <Rect x="250" y="520" width="300" height="50" fill="#0d1117" stroke="#30363d" strokeWidth="2" rx="10" />
         
         {/* Heading Scale - Ultra Enhanced */}
-        {Array.from({ length: 17 }, (_, i) => {
-          const hdgValue = ((heading - 80) + (i * 10)) % 360;
-          const x = 370 + (i * 29);
+        {Array.from({ length: 11 }, (_, i) => {
+          const hdgValue = ((heading - 50) + (i * 10)) % 360;
+          const x = 270 + (i * 26);
           const isMajor = hdgValue % 30 === 0;
             return (
             <G key={i}>
@@ -575,39 +575,39 @@ export default function PrimaryFlightDisplay({
           })}
 
         {/* Current Heading Digital Display - Enhanced */}
-        <Rect x="552" y="592" width="100" height="40" fill="#333" rx="8" opacity="0.3" />
-        <Rect x="550" y="590" width="100" height="40" fill="#000" stroke="#00FF00" strokeWidth="3" rx="8" />
-        <SvgText x="600" y="615" fill="#00FF00" fontSize="24" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+        <Rect x="352" y="582" width="96" height="35" fill="#333" rx="8" opacity="0.3" />
+        <Rect x="350" y="580" width="96" height="35" fill="#000" stroke="#00FF00" strokeWidth="3" rx="8" />
+        <SvgText x="398" y="602" fill="#00FF00" fontSize="20" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
           {heading.toString().padStart(3, '0')}°
         </SvgText>
 
         {/* === ENHANCED FLIGHT MODE ANNUNCIATORS === */}
-        <G transform="translate(350, 25)">
+        <G transform="translate(250, 25)">
           {/* Autopilot Modes */}
-          <Rect x="0" y="0" width="80" height="30" fill="#00FF00" rx="5" stroke="#000" strokeWidth="2" />
-          <SvgText x="40" y="20" fill="#000" fontSize="16" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="0" y="0" width="60" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="30" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             A/P
           </SvgText>
           
-          <Rect x="90" y="0" width="80" height="30" fill="#00FF00" rx="5" stroke="#000" strokeWidth="2" />
-          <SvgText x="130" y="20" fill="#000" fontSize="16" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="70" y="0" width="60" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="100" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             LNAV
           </SvgText>
           
-          <Rect x="180" y="0" width="80" height="30" fill="#00FF00" rx="5" stroke="#000" strokeWidth="2" />
-          <SvgText x="220" y="20" fill="#000" fontSize="16" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="140" y="0" width="60" height="25" fill="#00FF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="170" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             VNAV
           </SvgText>
 
-          <Rect x="270" y="0" width="80" height="30" fill="#FFFF00" rx="5" stroke="#000" strokeWidth="2" />
-          <SvgText x="310" y="20" fill="#000" fontSize="16" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+          <Rect x="210" y="0" width="60" height="25" fill="#FFFF00" rx="4" stroke="#000" strokeWidth="2" />
+          <SvgText x="240" y="17" fill="#000" fontSize="12" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
             APP
           </SvgText>
         </G>
 
         {/* === DECISION HEIGHT WARNING === */}
         {radioAlt < 1000 && (
-          <G transform="translate(550, 100)">
+          <G transform="translate(350, 100)">
             <Rect x="0" y="0" width="100" height="25" fill="#FF0000" rx="3" stroke="#FFF" strokeWidth="2" />
             <SvgText x="50" y="18" fill="#FFF" fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
               MINIMUMS
