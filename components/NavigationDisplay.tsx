@@ -176,7 +176,7 @@ export default function NavigationDisplay({
                   x={Math.cos(radian) * labelRadius} 
                   y={Math.sin(radian) * labelRadius + 6} 
                   fill={AVIATION_COLORS.GREEN} 
-                  fontSize={Math.max(10, 16 * scaleFactor)} 
+                  fontSize={Math.max(12, 18 * scaleFactor)} 
                   fontFamily={AVIATION_FONTS.PRIMARY}
                     textAnchor="middle"
               fontWeight="bold"
@@ -207,7 +207,7 @@ export default function NavigationDisplay({
               x={wp.x}
               y={wp.y + 25 * scaleFactor} 
               fill={AVIATION_COLORS.BLUE}
-              fontSize={Math.max(8, 12 * scaleFactor)} 
+              fontSize={Math.max(10, 14 * scaleFactor)} 
               fontFamily={AVIATION_FONTS.PRIMARY}
                   textAnchor="middle"
                   fontWeight="bold"
@@ -229,7 +229,7 @@ export default function NavigationDisplay({
                   x={wp.x} 
               y={wp.y + 20 * scaleFactor} 
               fill={AVIATION_COLORS.MAGENTA} 
-              fontSize={Math.max(6, 10 * scaleFactor)} 
+              fontSize={Math.max(8, 12 * scaleFactor)} 
               fontFamily={AVIATION_FONTS.PRIMARY}
                   textAnchor="middle"
                   fontWeight="bold"
@@ -248,7 +248,7 @@ export default function NavigationDisplay({
                   x={wp.x} 
               y={wp.y + 22 * scaleFactor} 
               fill={AVIATION_COLORS.GREEN} 
-              fontSize={Math.max(6, 10 * scaleFactor)}
+              fontSize={Math.max(8, 12 * scaleFactor)}
               fontFamily={AVIATION_FONTS.PRIMARY}
               textAnchor="middle"
                   fontWeight="bold"
@@ -282,7 +282,7 @@ export default function NavigationDisplay({
             x={t.x + 15 * scaleFactor} 
             y={t.y - 5 * scaleFactor} 
                 fill={threatColor} 
-            fontSize={Math.max(5, 9 * scaleFactor)} 
+            fontSize={Math.max(7, 11 * scaleFactor)} 
             fontFamily={AVIATION_FONTS.PRIMARY}
                 fontWeight="bold"
               >
@@ -292,7 +292,7 @@ export default function NavigationDisplay({
             x={t.x + 15 * scaleFactor} 
             y={t.y + 8 * scaleFactor} 
                 fill={threatColor} 
-            fontSize={Math.max(4, 8 * scaleFactor)} 
+            fontSize={Math.max(6, 10 * scaleFactor)} 
             fontFamily={AVIATION_FONTS.PRIMARY}
           >
             FL{Math.floor(t.altitude / 100)}
@@ -337,7 +337,7 @@ export default function NavigationDisplay({
   const renderTopInfoBar = useCallback(() => {
     const barHeight = Math.max(25, 50 * scaleFactor);
     const chipHeight = Math.max(15, 30 * scaleFactor);
-    const fontSize = Math.max(8, 12 * scaleFactor);
+    const fontSize = Math.max(10, 14 * scaleFactor);
     
     let x = 16 * scaleFactor;
     const y = 3 * scaleFactor;
@@ -713,7 +713,7 @@ export default function NavigationDisplay({
             x={20 * scaleFactor} 
             y={-20 * scaleFactor} 
             fill={AVIATION_COLORS.GREEN} 
-            fontSize={8 * scaleFactor} 
+            fontSize={Math.max(10, 12 * scaleFactor)} 
             fontFamily={AVIATION_FONTS.PRIMARY} 
             textAnchor="middle" 
             fontWeight="bold"
@@ -724,7 +724,7 @@ export default function NavigationDisplay({
             x={20 * scaleFactor} 
             y={0} 
             fill={AVIATION_COLORS.WHITE} 
-            fontSize={16 * scaleFactor} 
+            fontSize={Math.max(18, 20 * scaleFactor)} 
             fontFamily={AVIATION_FONTS.PRIMARY} 
             textAnchor="middle" 
             fontWeight="bold"
@@ -735,7 +735,7 @@ export default function NavigationDisplay({
             x={20 * scaleFactor} 
             y={20 * scaleFactor} 
             fill={AVIATION_COLORS.GREEN} 
-            fontSize={8 * scaleFactor} 
+            fontSize={Math.max(10, 12 * scaleFactor)} 
             fontFamily={AVIATION_FONTS.PRIMARY} 
             textAnchor="middle"
           >
@@ -776,7 +776,7 @@ export default function NavigationDisplay({
                   x={centerX} 
                   y={titleY} 
                   fill={AVIATION_COLORS.GREEN} 
-                  fontSize={8 * scaleFactor} 
+                  fontSize={Math.max(10, 12 * scaleFactor)} 
                   fontFamily={AVIATION_FONTS.PRIMARY} 
                   textAnchor="middle" 
                   fontWeight="bold"
@@ -799,7 +799,7 @@ export default function NavigationDisplay({
                   x={centerX} 
                   y={firstButtonY + 8 * scaleFactor} 
                   fill={AVIATION_COLORS.BLACK} 
-                  fontSize={8 * scaleFactor} 
+                  fontSize={Math.max(9, 11 * scaleFactor)} 
                   fontFamily={AVIATION_FONTS.PRIMARY} 
                   textAnchor="middle" 
                   fontWeight="bold"
@@ -822,7 +822,7 @@ export default function NavigationDisplay({
                   x={centerX} 
                   y={firstButtonY + buttonHeight + gap + 8 * scaleFactor} 
                   fill={AVIATION_COLORS.WHITE} 
-                  fontSize={8 * scaleFactor} 
+                  fontSize={Math.max(9, 11 * scaleFactor)} 
                   fontFamily={AVIATION_FONTS.PRIMARY} 
                   textAnchor="middle"
                 >
@@ -844,7 +844,7 @@ export default function NavigationDisplay({
                   x={centerX} 
                   y={firstButtonY + (buttonHeight + gap) * 2 + 8 * scaleFactor} 
                   fill={AVIATION_COLORS.WHITE} 
-                  fontSize={8 * scaleFactor} 
+                  fontSize={Math.max(9, 11 * scaleFactor)} 
                   fontFamily={AVIATION_FONTS.PRIMARY} 
                   textAnchor="middle"
                 >
@@ -862,24 +862,24 @@ export default function NavigationDisplay({
         paddingHorizontal: isMobile ? 4 : 8
       }]}>
         <View style={styles.dataGroup}>
-          <Text style={[styles.dataLabel, { fontSize: isMobile ? 7 : 9 }]}>WPT</Text>
-          <Text style={[styles.dataValue, { fontSize: isMobile ? 9 : 11 }]}>WPT02</Text>
+          <Text style={[styles.dataLabel, { fontSize: isMobile ? 9 : 11 }]}>WPT</Text>
+          <Text style={[styles.dataValue, { fontSize: isMobile ? 11 : 13 }]}>WPT02</Text>
         </View>
         <View style={styles.dataGroup}>
-          <Text style={[styles.dataLabel, { fontSize: isMobile ? 7 : 9 }]}>DTK</Text>
-          <Text style={[styles.dataValue, { fontSize: isMobile ? 9 : 11 }]}>085°</Text>
+          <Text style={[styles.dataLabel, { fontSize: isMobile ? 9 : 11 }]}>DTK</Text>
+          <Text style={[styles.dataValue, { fontSize: isMobile ? 11 : 13 }]}>085°</Text>
         </View>
         <View style={styles.dataGroup}>
-          <Text style={[styles.dataLabel, { fontSize: isMobile ? 7 : 9 }]}>DIS</Text>
-          <Text style={[styles.dataValue, { fontSize: isMobile ? 9 : 11 }]}>15.2</Text>
+          <Text style={[styles.dataLabel, { fontSize: isMobile ? 9 : 11 }]}>DIS</Text>
+          <Text style={[styles.dataValue, { fontSize: isMobile ? 11 : 13 }]}>15.2</Text>
         </View>
         <View style={styles.dataGroup}>
-          <Text style={[styles.dataLabel, { fontSize: isMobile ? 7 : 9 }]}>ETE</Text>
-          <Text style={[styles.dataValue, { fontSize: isMobile ? 9 : 11 }]}>00:12</Text>
+          <Text style={[styles.dataLabel, { fontSize: isMobile ? 9 : 11 }]}>ETE</Text>
+          <Text style={[styles.dataValue, { fontSize: isMobile ? 11 : 13 }]}>00:12</Text>
         </View>
         <View style={styles.dataGroup}>
-          <Text style={[styles.dataLabel, { fontSize: isMobile ? 7 : 9 }]}>XTK</Text>
-          <Text style={[styles.dataValue, { fontSize: isMobile ? 9 : 11 }]}>0.1L</Text>
+          <Text style={[styles.dataLabel, { fontSize: isMobile ? 9 : 11 }]}>XTK</Text>
+          <Text style={[styles.dataValue, { fontSize: isMobile ? 11 : 13 }]}>0.1L</Text>
         </View>
       </View>
     </View>
