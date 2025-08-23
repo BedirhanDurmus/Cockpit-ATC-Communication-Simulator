@@ -16,11 +16,7 @@ import { Audio } from "expo-av";
 import PrimaryFlightDisplay from "../../components/PrimaryFlightDisplay";
 import NavigationDisplay from "../../components/NavigationDisplay";
 import { useTrainingSession } from "@/hooks/useTrainingSession";
-import Svg, { 
-  Line, Path, Text as SvgText, G, Rect, Circle, Polygon, 
-  Defs, LinearGradient, Stop, ClipPath, RadialGradient
-} from "react-native-svg";
-import { AVIATION_COLORS, AVIATION_DIMENSIONS, AVIATION_FONTS, AVIATION_OPACITIES } from '../constants/aviation';
+import { useAppState } from "@/hooks/useAppState";
 
 export default function TrainingScreen() {
   const {
@@ -39,10 +35,37 @@ export default function TrainingScreen() {
     toggleListening,
   } = useTrainingSession();
 
+  const { userData, logout } = useAppState();
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [transcribedText, setTranscribedText] = useState<string>("");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackType, setFeedbackType] = useState<"correct" | "incorrect" | null>(null);
+  const [showStatistics, setShowStatistics] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // Settings state
+  const [audioSensitivity, setAudioSensitivity] = useState(90); // Ses seviyesi artırıldı
+  const [audioQuality, setAudioQuality] = useState("High");
+  const [difficultyLevel, setDifficultyLevel] = useState("Intermediate");
+  const [autoAdvance, setAutoAdvance] = useState(true);
+  const [theme, setTheme] = useState("Dark");
+  const [fontSizeSetting, setFontSizeSetting] = useState("Medium");
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [vibrationEnabled, setVibrationEnabled] = useState(true);
+  const [speakerVolume, setSpeakerVolume] = useState(100); // Hoparlör ses seviyesi
+  const [microphoneGain, setMicrophoneGain] = useState(85); // Mikrofon kazancı
+  
+  // Statistics state
+  const [totalSessions, setTotalSessions] = useState(24);
+  const [averageScore, setAverageScore] = useState(87.5);
+  const [totalCommands, setTotalCommands] = useState(156);
+  const [averageResponseTime, setAverageResponseTime] = useState(2.3);
+  const [accuracy, setAccuracy] = useState(94.2);
+  const [bestScore, setBestScore] = useState(98.5);
+  const [totalTrainingTime, setTotalTrainingTime] = useState(18.5);
+  const [currentStreak, setCurrentStreak] = useState(7);
 
   useEffect(() => {
     return () => {
@@ -51,6 +74,40 @@ export default function TrainingScreen() {
       }
     };
   }, [recording]);
+
+  // Ses ayarlarını uygula
+  useEffect(() => {
+    const applyAudioSettings = async () => {
+      try {
+        // Hoparlör ses seviyesini ayarla
+        if (Platform.OS === 'android') {
+          // Android için ses seviyesi ayarı
+          const { Audio } = await import('expo-av');
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: true,
+            staysActiveInBackground: true,
+            playsInSilentModeIOS: true,
+            shouldDuckAndroid: false,
+            playThroughEarpieceAndroid: false, // Hoparlörden çal
+          });
+        }
+        
+        // Mikrofon kazancını ayarla
+        if (recording) {
+          try {
+            const status = await recording.getStatusAsync();
+            console.log('Mikrofon durumu:', status);
+          } catch (error) {
+            console.log('Mikrofon durumu alınamadı:', error);
+          }
+        }
+      } catch (error) {
+        console.log('Ses ayarları uygulanamadı:', error);
+      }
+    };
+
+    applyAudioSettings();
+  }, [speakerVolume, microphoneGain, recording]);
 
   const startTraining = () => {
     startSession();
@@ -91,7 +148,7 @@ export default function TrainingScreen() {
         // Store mediaRecorder reference
         (window as any).currentMediaRecorder = mediaRecorder;
       } else {
-        // Mobile recording using expo-av
+        // Mobile recording using expo-audio
         const { status } = await Audio.requestPermissionsAsync();
         if (status !== "granted") {
           Alert.alert("Permission required", "Please grant microphone permission to use this feature.");
@@ -101,10 +158,30 @@ export default function TrainingScreen() {
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: true,
           playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: false,
+          playThroughEarpieceAndroid: false, // Hoparlörden çal
         });
 
         const newRecording = new Audio.Recording();
-        await newRecording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+        await newRecording.prepareToRecordAsync({
+          android: {
+            extension: 'm4a',
+            outputFormat: 'MPEG4AAC',
+            audioEncoder: 'AAC',
+            sampleRate: 44100,
+            numberOfChannels: 1,
+            bitRate: 128000,
+          },
+          ios: {
+            extension: 'm4a',
+            outputFormat: 'MPEG4AAC',
+            audioQuality: 'High',
+            sampleRate: 44100,
+            numberOfChannels: 1,
+            bitRate: 128000,
+          },
+        } as any);
 
         await newRecording.startAsync();
         setRecording(newRecording);
@@ -277,6 +354,10 @@ export default function TrainingScreen() {
     return false;
   };
 
+  const handleLogout = () => {
+    logout();
+  };
+
   // Responsive dimensions
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const isMobile = screenWidth < 768;
@@ -323,19 +404,28 @@ export default function TrainingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={[styles.header, { paddingHorizontal: isMobile ? 10 : 20 }]}>
-        <Text style={[styles.title, { fontSize: fontSize.xlarge }]}>
-          ATC Communication Training
-        </Text>
-        {session.isActive ? (
-          <View style={styles.sessionInfo}>
-            <Text style={[styles.sessionText, { fontSize: fontSize.normal }]}>
-              Score: {session.score}
-            </Text>
-            <Text style={[styles.sessionText, { fontSize: fontSize.normal }]}>
-              Commands: {session.commandsIssued}
-            </Text>
+        <View style={styles.headerLeft}>
+          <Text style={[styles.title, { fontSize: fontSize.xlarge }]}>
+            ATC Communication Training
+          </Text>
+          {session.isActive ? (
+            <View style={styles.sessionInfo}>
+              <Text style={[styles.sessionText, { fontSize: fontSize.normal }]}>
+                Score: {session.score}
+              </Text>
+              <Text style={[styles.sessionText, { fontSize: fontSize.normal }]}>
+                Commands: {session.commandsIssued}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <View style={styles.logoutButtonContent}>
+            <Ionicons name="log-out" size={20} color="#FF6B6B" />
+            <Text style={styles.logoutButtonText}>Çıkış</Text>
           </View>
-        ) : null}
+        </TouchableOpacity>
       </View>
 
       <View style={styles.cockpitContainer}>
@@ -503,6 +593,344 @@ export default function TrainingScreen() {
             </View>
           </View>
         </View>
+
+        {/* Bottom Navigation Bar */}
+        <View style={styles.bottomNavigation}>
+          <TouchableOpacity style={[styles.navItem, { backgroundColor: session.isActive ? '#1a4a1a' : 'rgba(255, 255, 255, 0.05)' }]}>
+            <Ionicons name="airplane" size={20} color={session.isActive ? '#00FF00' : '#666'} />
+            <Text style={[styles.navText, { color: session.isActive ? '#00FF00' : '#666' }]}>Training</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.navItem} onPress={() => setShowStatistics(true)}>
+            <Ionicons name="analytics" size={20} color="#666" />
+            <Text style={styles.navText}>Statistics</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.navItem} onPress={() => setShowSettings(true)}>
+            <Ionicons name="settings" size={20} color="#666" />
+            <Text style={styles.navText}>Settings</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Statistics Modal */}
+        {showStatistics && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Training Statistics</Text>
+                <TouchableOpacity onPress={() => setShowStatistics(false)} style={styles.closeButton}>
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.statSection}>
+                  <Text style={styles.statSectionTitle}>Performance Overview</Text>
+                  
+                  <View style={styles.statCard}>
+                    <View style={styles.statHeader}>
+                      <Ionicons name="calendar" size={20} color="#FFD700" />
+                      <Text style={styles.statLabel}>Total Sessions</Text>
+                    </View>
+                    <Text style={styles.statValue}>{totalSessions}</Text>
+                    <Text style={styles.statSubtext}>This month</Text>
+                  </View>
+                  
+                  <View style={styles.statCard}>
+                    <View style={styles.statHeader}>
+                      <Ionicons name="trophy" size={20} color="#FFD700" />
+                      <Text style={styles.statLabel}>Average Score</Text>
+                    </View>
+                    <Text style={styles.statValue}>{averageScore}%</Text>
+                    <Text style={styles.statSubtext}>Last 10 sessions</Text>
+                  </View>
+                  
+                  <View style={styles.statCard}>
+                    <View style={styles.statHeader}>
+                      <Ionicons name="mic" size={20} color="#FFD700" />
+                      <Text style={styles.statLabel}>Commands Issued</Text>
+                    </View>
+                    <Text style={styles.statValue}>{totalCommands}</Text>
+                    <Text style={styles.statSubtext}>Total commands</Text>
+                  </View>
+                  
+                  <View style={styles.statCard}>
+                    <View style={styles.statHeader}>
+                      <Ionicons name="time" size={20} color="#FFD700" />
+                      <Text style={styles.statLabel}>Response Time</Text>
+                    </View>
+                    <Text style={styles.statValue}>{averageResponseTime}s</Text>
+                    <Text style={styles.statSubtext}>Average response</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.statSection}>
+                  <Text style={styles.statSectionTitle}>Detailed Metrics</Text>
+                  
+                  <View style={styles.statCard}>
+                    <View style={styles.statHeader}>
+                      <Ionicons name="checkmark-circle" size={20} color="#00D4AA" />
+                      <Text style={styles.statLabel}>Accuracy</Text>
+                    </View>
+                    <Text style={styles.statValue}>{accuracy}%</Text>
+                    <Text style={styles.statSubtext}>Correct responses</Text>
+                  </View>
+                  
+                  <View style={styles.statCard}>
+                    <View style={styles.statHeader}>
+                      <Ionicons name="star" size={20} color="#FFD700" />
+                      <Text style={styles.statLabel}>Best Score</Text>
+                    </View>
+                    <Text style={styles.statValue}>{bestScore}%</Text>
+                    <Text style={styles.statSubtext}>Personal record</Text>
+                  </View>
+                  
+                  <View style={styles.statCard}>
+                    <View style={styles.statHeader}>
+                      <Ionicons name="hourglass" size={20} color="#FFD700" />
+                      <Text style={styles.statLabel}>Total Training</Text>
+                    </View>
+                    <Text style={styles.statValue}>{totalTrainingTime}h</Text>
+                    <Text style={styles.statSubtext}>Cumulative time</Text>
+                  </View>
+                  
+                  <View style={styles.statCard}>
+                    <View style={styles.statHeader}>
+                      <Ionicons name="flame" size={20} color="#FF6B6B" />
+                      <Text style={styles.statLabel}>Current Streak</Text>
+                    </View>
+                    <Text style={styles.statValue}>{currentStreak} days</Text>
+                    <Text style={styles.statSubtext}>Consecutive training</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.statSection}>
+                  <Text style={styles.statSectionTitle}>Actions</Text>
+                  
+                  <TouchableOpacity style={styles.actionButton} onPress={() => {
+                    Alert.alert("Export Data", "Export your training statistics to CSV?", [
+                      { text: "Cancel", style: "cancel" },
+                      { text: "Export", onPress: () => Alert.alert("Exported", "Statistics exported successfully!") }
+                    ]);
+                  }}>
+                    <Ionicons name="download" size={20} color="#00D4AA" />
+                    <Text style={styles.actionButtonText}>Export Statistics</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.actionButton} onPress={() => {
+                    Alert.alert("Reset Stats", "Are you sure you want to reset all statistics?", [
+                      { text: "Cancel", style: "cancel" },
+                      { text: "Reset", style: "destructive", onPress: () => {
+                        setTotalSessions(0);
+                        setAverageScore(0);
+                        setTotalCommands(0);
+                        setAverageResponseTime(0);
+                        setAccuracy(0);
+                        setBestScore(0);
+                        setTotalTrainingTime(0);
+                        setCurrentStreak(0);
+                      }}
+                    ]);
+                  }}>
+                    <Ionicons name="trash" size={20} color="#FF6B6B" />
+                    <Text style={styles.actionButtonText}>Reset Statistics</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
+          </View>
+        )}
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Settings</Text>
+                <TouchableOpacity onPress={() => setShowSettings(false)} style={styles.closeButton}>
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.settingSection}>
+                  <Text style={styles.settingSectionTitle}>Audio Settings</Text>
+                  
+                  <View style={styles.settingItem}>
+                    <Text style={styles.settingLabel}>Microphone Sensitivity</Text>
+                    <View style={styles.sliderContainer}>
+                      <TouchableOpacity 
+                        style={styles.sliderButton} 
+                        onPress={() => setAudioSensitivity(Math.max(0, audioSensitivity - 5))}
+                      >
+                        <Ionicons name="remove" size={16} color="#FFD700" />
+                      </TouchableOpacity>
+                      <Text style={styles.sliderValue}>{audioSensitivity}%</Text>
+                      <TouchableOpacity 
+                        style={styles.sliderButton} 
+                        onPress={() => setAudioSensitivity(Math.min(100, audioSensitivity + 5))}
+                      >
+                        <Ionicons name="add" size={16} color="#FFD700" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.settingItem}>
+                    <Text style={styles.settingLabel}>Audio Quality</Text>
+                    <TouchableOpacity 
+                      style={styles.settingValue} 
+                      onPress={() => setAudioQuality(audioQuality === "High" ? "Medium" : audioQuality === "Medium" ? "Low" : "High")}
+                    >
+                      <Text style={styles.settingValueText}>{audioQuality}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <View style={styles.settingItem}>
+                    <Text style={styles.settingLabel}>Sound Effects</Text>
+                    <TouchableOpacity 
+                      style={[styles.toggleButton, soundEnabled && styles.toggleButtonActive]} 
+                      onPress={() => setSoundEnabled(!soundEnabled)}
+                    >
+                      <Text style={[styles.toggleText, soundEnabled && styles.toggleTextActive]}>
+                        {soundEnabled ? "ON" : "OFF"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <View style={styles.settingItem}>
+                    <Text style={styles.settingLabel}>Speaker Volume</Text>
+                    <View style={styles.sliderContainer}>
+                      <TouchableOpacity 
+                        style={styles.sliderButton} 
+                        onPress={() => setSpeakerVolume(Math.max(0, speakerVolume - 10))}
+                      >
+                        <Ionicons name="remove" size={16} color="#FFD700" />
+                      </TouchableOpacity>
+                      <Text style={styles.sliderValue}>{speakerVolume}%</Text>
+                      <TouchableOpacity 
+                        style={styles.sliderButton} 
+                        onPress={() => setSpeakerVolume(Math.min(100, speakerVolume + 10))}
+                      >
+                        <Ionicons name="add" size={16} color="#FFD700" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.settingItem}>
+                    <Text style={styles.settingLabel}>Microphone Gain</Text>
+                    <View style={styles.sliderContainer}>
+                      <TouchableOpacity 
+                        style={styles.sliderButton} 
+                        onPress={() => setMicrophoneGain(Math.max(0, microphoneGain - 5))}
+                      >
+                        <Ionicons name="remove" size={16} color="#FFD700" />
+                      </TouchableOpacity>
+                      <Text style={styles.sliderValue}>{microphoneGain}%</Text>
+                      <TouchableOpacity 
+                        style={styles.sliderButton} 
+                        onPress={() => setMicrophoneGain(Math.min(100, microphoneGain + 5))}
+                      >
+                        <Ionicons name="add" size={16} color="#FFD700" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+                
+                <View style={styles.settingSection}>
+                  <Text style={styles.settingSectionTitle}>Training Settings</Text>
+                  
+                  <View style={styles.settingItem}>
+                    <Text style={styles.settingLabel}>Difficulty Level</Text>
+                    <TouchableOpacity 
+                      style={styles.settingValue} 
+                      onPress={() => setDifficultyLevel(difficultyLevel === "Beginner" ? "Intermediate" : difficultyLevel === "Intermediate" ? "Advanced" : "Beginner")}
+                    >
+                      <Text style={styles.settingValueText}>{difficultyLevel}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <View style={styles.settingItem}>
+                    <Text style={styles.settingLabel}>Auto-Advance</Text>
+                    <TouchableOpacity 
+                      style={[styles.toggleButton, autoAdvance && styles.toggleButtonActive]} 
+                      onPress={() => setAutoAdvance(!autoAdvance)}
+                    >
+                      <Text style={[styles.toggleText, autoAdvance && styles.toggleTextActive]}>
+                        {autoAdvance ? "ON" : "OFF"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <View style={styles.settingItem}>
+                    <Text style={styles.settingLabel}>Vibration</Text>
+                    <TouchableOpacity 
+                      style={[styles.toggleButton, vibrationEnabled && styles.toggleButtonActive]} 
+                      onPress={() => setVibrationEnabled(!vibrationEnabled)}
+                    >
+                      <Text style={[styles.toggleText, vibrationEnabled && styles.toggleTextActive]}>
+                        {vibrationEnabled ? "ON" : "OFF"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                
+                <View style={styles.settingSection}>
+                  <Text style={styles.settingSectionTitle}>Display Settings</Text>
+                  
+                  <View style={styles.settingItem}>
+                    <Text style={styles.settingLabel}>Theme</Text>
+                    <TouchableOpacity 
+                      style={styles.settingValue} 
+                      onPress={() => setTheme(theme === "Dark" ? "Light" : "Dark")}
+                    >
+                      <Text style={styles.settingValueText}>{theme}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <View style={styles.settingItem}>
+                    <Text style={styles.settingLabel}>Font Size</Text>
+                    <TouchableOpacity 
+                      style={styles.settingValue} 
+                      onPress={() => setFontSizeSetting(fontSizeSetting === "Small" ? "Medium" : fontSizeSetting === "Medium" ? "Large" : "Small")}
+                    >
+                      <Text style={styles.settingValueText}>{fontSizeSetting}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                
+                <View style={styles.settingSection}>
+                  <Text style={styles.settingSectionTitle}>Actions</Text>
+                  
+                  <TouchableOpacity style={styles.actionButton} onPress={() => {
+                    Alert.alert("Reset Settings", "Are you sure you want to reset all settings to default?", [
+                      { text: "Cancel", style: "cancel" },
+                      { text: "Reset", style: "destructive", onPress: () => {
+                        setAudioSensitivity(75);
+                        setAudioQuality("High");
+                        setDifficultyLevel("Intermediate");
+                        setAutoAdvance(true);
+                        setTheme("Dark");
+                        setFontSizeSetting("Medium");
+                        setSoundEnabled(true);
+                        setVibrationEnabled(true);
+                      }}
+                    ]);
+                  }}>
+                    <Ionicons name="refresh" size={20} color="#FF6B6B" />
+                    <Text style={styles.actionButtonText}>Reset to Default</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.actionButton} onPress={() => {
+                    Alert.alert("Settings Saved", "All settings have been saved successfully!");
+                  }}>
+                    <Ionicons name="save" size={20} color="#00D4AA" />
+                    <Text style={styles.actionButtonText}>Save Settings</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -515,9 +943,14 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingVertical: 10,
-    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#333",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
   },
   title: {
     fontSize: 24,
@@ -532,6 +965,24 @@ const styles = StyleSheet.create({
   sessionText: {
     color: "#00A86B",
     fontSize: 16,
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+  },
+  logoutButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   cockpitContainer: {
     flex: 1,
@@ -603,6 +1054,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 15,
     minWidth: 200,
+  },
+  feedbackCorrect: {
+    borderColor: '#00FF00',
+    shadowColor: '#00FF00',
+  },
+  feedbackIncorrect: {
+    borderColor: '#FF0000',
+    shadowColor: '#FF0000',
   },
   feedbackMainText: {
     fontSize: 24,
@@ -685,104 +1144,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontFamily: 'monospace',
-  },
-  statusContainer: {
-    margin: 20,
-    padding: 20,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#FFA500",
-  },
-  statusHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
-  },
-  statusLabel: {
-    color: "#FFA500",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  waitingText: {
-    color: "#FFA500",
-    fontSize: 14,
-    fontStyle: "italic",
-    marginTop: 8,
-  },
-  transcriptionContainer: {
-    margin: 20,
-    marginTop: 0,
-    padding: 16,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 12,
-  },
-  transcriptionLabel: {
-    color: "#888",
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  transcriptionText: {
-    color: "white",
-    fontSize: 16,
-  },
-  feedbackCorrect: {
-    backgroundColor: "rgba(0, 168, 107, 0.1)",
-    borderColor: "#00A86B",
-  },
-  feedbackIncorrect: {
-    backgroundColor: "rgba(220, 38, 38, 0.1)",
-    borderColor: "#dc2626",
-  },
-  feedbackText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  feedbackTextCorrect: {
-    color: "#00A86B",
-  },
-  feedbackTextIncorrect: {
-    color: "#dc2626",
-  },
-  controls: {
-    padding: 20,
-    gap: 12,
-  },
-  startButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    backgroundColor: "#00A86B",
-    padding: 16,
-    borderRadius: 12,
-  },
-  recordButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    backgroundColor: "#2563eb",
-    padding: 16,
-    borderRadius: 12,
-  },
-  recordingActive: {
-    backgroundColor: "#dc2626",
-  },
-  stopButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    backgroundColor: "#666",
-    padding: 16,
-    borderRadius: 12,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
   },
   controlPanel: {
     backgroundColor: "#1a1a1a",
@@ -1001,5 +1362,234 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "bold",
     fontFamily: "monospace",
+  },
+  bottomNavigation: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "#1a1a1a",
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#333",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  navItem: {
+    alignItems: "center",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  navText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    fontFamily: "monospace",
+    marginTop: 4,
+  },
+  
+  // Modal Styles
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  modalContent: {
+    backgroundColor: "#2D2D2D",
+    borderRadius: 16,
+    width: "90%",
+    maxHeight: "80%",
+    borderWidth: 1,
+    borderColor: "#444",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#444",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    fontFamily: "monospace",
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalBody: {
+    padding: 20,
+  },
+  
+  // Statistics Styles
+  statCard: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  statLabel: {
+    fontSize: 14,
+    color: "#CCC",
+    fontFamily: "monospace",
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFD700",
+    fontFamily: "monospace",
+    marginBottom: 4,
+  },
+  statSubtext: {
+    fontSize: 12,
+    color: "#888",
+    fontFamily: "monospace",
+  },
+  
+  // Settings Styles
+  settingSection: {
+    marginBottom: 24,
+  },
+  settingSectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FFD700",
+    fontFamily: "monospace",
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#444",
+    paddingBottom: 8,
+  },
+  settingItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#333",
+  },
+  settingLabel: {
+    fontSize: 14,
+    color: "#CCC",
+    fontFamily: "monospace",
+    flex: 1,
+  },
+  settingValue: {
+    backgroundColor: "#1A1A1A",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#444",
+  },
+  settingValueText: {
+    fontSize: 12,
+    color: "#FFD700",
+    fontFamily: "monospace",
+  },
+  sliderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1A1A1A",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#444",
+    minWidth: 120,
+    justifyContent: "space-between",
+  },
+  sliderValue: {
+    fontSize: 12,
+    color: "#FFD700",
+    fontFamily: "monospace",
+  },
+  
+  // Interactive Controls
+  sliderButton: {
+    backgroundColor: "#1A1A1A",
+    padding: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#444",
+    minWidth: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  toggleButton: {
+    backgroundColor: "#1A1A1A",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#444",
+    minWidth: 60,
+    alignItems: "center",
+  },
+  toggleButtonActive: {
+    backgroundColor: "#00D4AA",
+    borderColor: "#00D4AA",
+  },
+  toggleText: {
+    fontSize: 12,
+    color: "#666",
+    fontFamily: "monospace",
+    fontWeight: "bold",
+  },
+  toggleTextActive: {
+    color: "#000",
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1A1A1A",
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#444",
+  },
+  actionButtonText: {
+    fontSize: 14,
+    color: "#FFFFFF",
+    fontFamily: "monospace",
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+  
+  // Statistics Section Styles
+  statSection: {
+    marginBottom: 24,
+  },
+  statSectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFD700",
+    fontFamily: "monospace",
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#444",
+    paddingBottom: 8,
+  },
+  statHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
   },
 });

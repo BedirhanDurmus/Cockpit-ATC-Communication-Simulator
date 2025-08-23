@@ -42,7 +42,7 @@ export default function PrimaryFlightDisplay({
     localizer: 0.5,
   });
 
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
   const lastUpdateRef = useRef<number>(0);
 
   // Responsive dimensions
@@ -707,7 +707,7 @@ export default function PrimaryFlightDisplay({
     <G transform="translate(350, 100)">
       <Rect x="0" y="0" width="100" height="25" fill={AVIATION_COLORS.RED} rx="3" stroke={AVIATION_COLORS.WHITE} strokeWidth="2" />
       <SvgText x="50" y="18" fill={AVIATION_COLORS.WHITE} fontSize="14" fontFamily={AVIATION_FONTS.PRIMARY} textAnchor="middle" fontWeight="bold">
-        MINIMUMS
+        CMD
       </SvgText>
     </G>
   ), [radioAlt, decisionAltitude]);

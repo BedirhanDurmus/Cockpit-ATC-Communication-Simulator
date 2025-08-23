@@ -119,18 +119,18 @@ export default function NavigationDisplay({
     
     return [1, 2, 3, 4].map((ring) => {
       const radius = ring * baseRadius;
-      return (
-        <Circle
-          key={ring}
-          cx={aircraftX}
-          cy={aircraftY}
-          r={radius}
-          fill="none"
+            return (
+              <Circle
+                key={ring}
+                cx={aircraftX}
+                cy={aircraftY}
+                r={radius}
+                fill="none"
           stroke={`rgba(0,255,0,${AVIATION_OPACITIES.MEDIUM})`}
           strokeWidth={Math.max(1, 2 * scaleFactor)}
-          strokeDasharray="5,5"
-        />
-      );
+                strokeDasharray="5,5"
+              />
+            );
     });
   }, [aircraftX, aircraftY, isMobile, isWeb, displayWidth, scaleFactor]);
 
@@ -140,7 +140,7 @@ export default function NavigationDisplay({
     const labelRadius = compassRadius * 1.05;
     
     return (
-      <G transform={`translate(${aircraftX}, ${aircraftY})`}>
+        <G transform={`translate(${aircraftX}, ${aircraftY})`}>
         {/* Outer compass ring */}
         <Circle 
           cx="0" 
@@ -150,44 +150,44 @@ export default function NavigationDisplay({
           stroke={AVIATION_COLORS.GREEN} 
           strokeWidth={Math.max(1, 2 * scaleFactor)} 
         />
-        
-        {/* Compass markings */}
-        {Array.from({ length: 36 }, (_, i) => {
-          const angle = i * 10;
-          const radian = ((angle - 90) * Math.PI) / 180;
-          const isMajor = angle % 30 === 0;
+          
+          {/* Compass markings */}
+          {Array.from({ length: 36 }, (_, i) => {
+            const angle = i * 10;
+            const radian = ((angle - 90) * Math.PI) / 180;
+            const isMajor = angle % 30 === 0;
           const x1 = Math.cos(radian) * (compassRadius - 10);
           const y1 = Math.sin(radian) * (compassRadius - 10);
           const x2 = Math.cos(radian) * (isMajor ? compassRadius + 5 : compassRadius);
           const y2 = Math.sin(radian) * (isMajor ? compassRadius + 5 : compassRadius);
-        
+          
           return (
-            <G key={angle}>
-              <Line 
+              <G key={angle}>
+                <Line 
                 x1={x1} 
                 y1={y1} 
                 x2={x2} 
                 y2={y2} 
                 stroke={AVIATION_COLORS.GREEN} 
                 strokeWidth={isMajor ? Math.max(2, 3 * scaleFactor) : Math.max(1, 2 * scaleFactor)} 
-              />
-              {isMajor && (
-                <SvgText
+                />
+                {isMajor && (
+            <SvgText
                   x={Math.cos(radian) * labelRadius} 
                   y={Math.sin(radian) * labelRadius + 6} 
                   fill={AVIATION_COLORS.GREEN} 
                   fontSize={Math.max(10, 16 * scaleFactor)} 
                   fontFamily={AVIATION_FONTS.PRIMARY}
-                  textAnchor="middle"
-                  fontWeight="bold"
-                >
-                  {angle.toString().padStart(3, '0')}
-                </SvgText>
-              )}
-            </G>
+                    textAnchor="middle"
+              fontWeight="bold"
+            >
+                    {angle.toString().padStart(3, '0')}
+            </SvgText>
+                )}
+              </G>
           );
         })}
-      </G>
+        </G>
     );
   }, [aircraftX, aircraftY, isMobile, isWeb, displayWidth, scaleFactor]);
 
@@ -195,9 +195,9 @@ export default function NavigationDisplay({
   const renderWaypoints = useCallback(() => {
     return waypoints.map((wp, index) => (
       <G key={`${wp.name}-${index}`}>
-        {wp.type === "airport" && (
-          <>
-            <Polygon 
+            {wp.type === "airport" && (
+              <>
+                <Polygon 
               points={`${wp.x},${wp.y-12*scaleFactor} ${wp.x+10*scaleFactor},${wp.y+8*scaleFactor} ${wp.x-10*scaleFactor},${wp.y+8*scaleFactor}`}
               fill={AVIATION_COLORS.BLUE} 
               stroke={AVIATION_COLORS.BLACK} 
@@ -209,55 +209,55 @@ export default function NavigationDisplay({
               fill={AVIATION_COLORS.BLUE}
               fontSize={Math.max(8, 12 * scaleFactor)} 
               fontFamily={AVIATION_FONTS.PRIMARY}
-              textAnchor="middle"
-              fontWeight="bold"
-            >
-              {wp.name}
-            </SvgText>
-          </>
-        )}
-        
-        {wp.type === "waypoint" && (
-          <>
-            <Polygon 
+                  textAnchor="middle"
+                  fontWeight="bold"
+                >
+                  {wp.name}
+                </SvgText>
+              </>
+            )}
+            
+            {wp.type === "waypoint" && (
+              <>
+                <Polygon 
               points={`${wp.x},${wp.y-8*scaleFactor} ${wp.x+8*scaleFactor},${wp.y} ${wp.x},${wp.y+8*scaleFactor} ${wp.x-8*scaleFactor},${wp.y}`}
               fill={AVIATION_COLORS.MAGENTA} 
               stroke={AVIATION_COLORS.BLACK} 
               strokeWidth={Math.max(1, 2 * scaleFactor)}
-            />
-            <SvgText 
-              x={wp.x} 
+                />
+                <SvgText 
+                  x={wp.x} 
               y={wp.y + 20 * scaleFactor} 
               fill={AVIATION_COLORS.MAGENTA} 
               fontSize={Math.max(6, 10 * scaleFactor)} 
               fontFamily={AVIATION_FONTS.PRIMARY}
-              textAnchor="middle" 
-              fontWeight="bold"
-            >
-              {wp.name}
-            </SvgText>
-          </>
-        )}
-        
-        {wp.type === "vor" && (
-          <>
+                  textAnchor="middle"
+                  fontWeight="bold"
+                >
+                  {wp.name}
+                </SvgText>
+              </>
+            )}
+            
+            {wp.type === "vor" && (
+              <>
             <Circle cx={wp.x} cy={wp.y} r={8 * scaleFactor} fill="none" stroke={AVIATION_COLORS.GREEN} strokeWidth={3 * scaleFactor} />
             <Line x1={wp.x-8*scaleFactor} y1={wp.y} x2={wp.x+8*scaleFactor} y2={wp.y} stroke={AVIATION_COLORS.GREEN} strokeWidth={2 * scaleFactor} />
             <Line x1={wp.x} y1={wp.y-8*scaleFactor} x2={wp.x} y2={wp.y+8*scaleFactor} stroke={AVIATION_COLORS.GREEN} strokeWidth={2 * scaleFactor} />
-            <SvgText 
-              x={wp.x} 
+                <SvgText 
+                  x={wp.x} 
               y={wp.y + 22 * scaleFactor} 
               fill={AVIATION_COLORS.GREEN} 
               fontSize={Math.max(6, 10 * scaleFactor)}
               fontFamily={AVIATION_FONTS.PRIMARY}
               textAnchor="middle"
-              fontWeight="bold"
+                  fontWeight="bold"
             >
               {wp.name}
             </SvgText>
-          </>
-        )}
-      </G>
+              </>
+            )}
+          </G>
     ));
   }, [waypoints, scaleFactor]);
 
@@ -266,32 +266,32 @@ export default function NavigationDisplay({
     if (!tcasEnabled) return null;
     
     return traffic.map((t, index) => {
-      const altDiff = Math.abs(t.altitude - altitude);
+          const altDiff = Math.abs(t.altitude - altitude);
       const threatColor = t.threat === "traffic" ? AVIATION_COLORS.YELLOW : 
                          altDiff < 1000 ? AVIATION_COLORS.RED : AVIATION_COLORS.GREEN;
-      
-      return (
+          
+          return (
         <G key={`${t.callsign}-${index}`}>
-          <Polygon 
+              <Polygon 
             points={`${t.x},${t.y-6*scaleFactor} ${t.x+6*scaleFactor},${t.y+6*scaleFactor} ${t.x-6*scaleFactor},${t.y+6*scaleFactor}`}
-            fill={threatColor} 
+                fill={threatColor} 
             stroke={AVIATION_COLORS.BLACK} 
             strokeWidth={1 * scaleFactor}
-          />
-          <SvgText 
+              />
+              <SvgText 
             x={t.x + 15 * scaleFactor} 
             y={t.y - 5 * scaleFactor} 
-            fill={threatColor} 
+                fill={threatColor} 
             fontSize={Math.max(5, 9 * scaleFactor)} 
             fontFamily={AVIATION_FONTS.PRIMARY}
-            fontWeight="bold"
-          >
-            {t.callsign}
-          </SvgText>
-          <SvgText 
+                fontWeight="bold"
+              >
+                {t.callsign}
+              </SvgText>
+              <SvgText 
             x={t.x + 15 * scaleFactor} 
             y={t.y + 8 * scaleFactor} 
-            fill={threatColor} 
+                fill={threatColor} 
             fontSize={Math.max(4, 8 * scaleFactor)} 
             fontFamily={AVIATION_FONTS.PRIMARY}
           >
