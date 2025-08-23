@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, Animated, Dimensions, Image, TouchableOpacity } from 'react-native';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
+import { Audio } from 'expo-av';
 
 const { width, height } = Dimensions.get('window');
 
@@ -14,6 +15,9 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [imageLoadProgress, setImageLoadProgress] = useState(0);
   const [cachedImages, setCachedImages] = useState<any[]>([]);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [showAudioButton, setShowAudioButton] = useState(false);
+  const [audioLoaded, setAudioLoaded] = useState(false);
   
   // Havacılık fotoğrafları
   const aviationImages = [
@@ -29,41 +33,108 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
   // Fotoğrafları önceden yükle ve cache'le
   useEffect(() => {
     const preloadImages = async () => {
-      let loadedCount = 0;
-      const cached: any[] = [];
-      
-      // Tüm fotoğrafları paralel olarak yükle ve cache'le
-      const loadPromises = aviationImages.map(async (imageSource, index) => {
-        try {
-          // Her fotoğrafı Image.resolveAssetSource ile resolve et
-          const resolvedImage = Image.resolveAssetSource(imageSource);
-          
-          // Eğer network image ise prefetch yap
-          if (resolvedImage.uri && resolvedImage.uri.startsWith('http')) {
-            await Image.prefetch(resolvedImage.uri);
-          }
-          
-          // Cache'e ekle
-          cached[index] = resolvedImage;
-          loadedCount++;
-          setImageLoadProgress((loadedCount / aviationImages.length) * 100);
-        } catch (error) {
-          console.log('Fotoğraf yüklenemedi:', index, error);
-          // Hata olsa bile cache'e ekle
-          cached[index] = aviationImages[index];
-          loadedCount++;
-          setImageLoadProgress((loadedCount / aviationImages.length) * 100);
-        }
-      });
-      
-      // Tüm fotoğraflar yüklenene kadar bekle
-      await Promise.all(loadPromises);
-      setCachedImages(cached);
-      setImagesLoaded(true);
+      try {
+        // Web'de basit yükleme - resolveAssetSource kullanma
+        const cached = [...aviationImages];
+        setCachedImages(cached);
+        setImagesLoaded(true);
+        setImageLoadProgress(100);
+      } catch (error) {
+        console.log('Fotoğraf yükleme hatası:', error);
+        // Hata olsa bile devam et
+        setCachedImages(aviationImages);
+        setImagesLoaded(true);
+        setImageLoadProgress(100);
+      }
     };
     
     preloadImages();
   }, []);
+
+  // Ses dosyasını yükle ve çal
+  useEffect(() => {
+    const loadAndPlaySound = async () => {
+      try {
+        console.log('🎵 Ses dosyası yükleniyor...');
+        
+        // Audio session'ı ayarla
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          staysActiveInBackground: false,
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
+        
+        console.log('🔊 Audio session ayarlandı');
+
+        // Ses dosyasını yükle
+        const { sound: audioSound } = await Audio.Sound.createAsync(
+          require('../assets/sound/Ucak_sesi.mp3'),
+          { 
+            shouldPlay: false, // Önce yükle, sonra çal
+            volume: 1.0,
+            isLooping: false,
+            isMuted: false
+          }
+        );
+        
+        console.log('📁 Ses dosyası yüklendi');
+        setSound(audioSound);
+        setAudioLoaded(true);
+        
+        // Ses durumunu takip et
+        audioSound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded) {
+            console.log('📊 Ses durumu:', {
+              isPlaying: status.isPlaying,
+              durationMillis: status.durationMillis,
+              positionMillis: status.positionMillis
+            });
+            
+            if (status.didJustFinish) {
+              console.log('✅ Ses bitti, temizleniyor...');
+              audioSound.unloadAsync();
+            }
+          }
+        });
+        
+        // Web'de otomatik ses çalma izni yok, buton göster
+        setShowAudioButton(true);
+        
+      } catch (error) {
+        console.error('❌ Ses yükleme hatası:', error);
+      }
+    };
+
+    // Fotoğraflar yüklendikten sonra sesi çal
+    if (imagesLoaded) {
+      console.log('🖼️ Fotoğraflar yüklendi, ses başlatılıyor...');
+      loadAndPlaySound();
+    }
+
+    // Cleanup
+    return () => {
+      if (sound) {
+        console.log('🧹 Ses temizleniyor...');
+        sound.unloadAsync();
+      }
+    };
+  }, [imagesLoaded]);
+
+  // Manuel ses çalma fonksiyonu
+  const playAudioManually = async () => {
+    if (sound && audioLoaded) {
+      try {
+        console.log('▶️ Manuel ses çalma başlatılıyor...');
+        await sound.playAsync();
+        console.log('🎵 Ses çalınıyor!');
+        setShowAudioButton(false); // Butonu gizle
+      } catch (error) {
+        console.error('❌ Manuel ses çalma hatası:', error);
+      }
+    }
+  };
 
   useEffect(() => {
     // Fotoğraflar yüklenmeden animasyonları başlatma
@@ -181,23 +252,7 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
         {/* Yükleniyor işareti - Uçak animasyonu */}
         <View style={styles.loadingContainer}>
           <View style={styles.airplaneLoading}>
-            <Animated.View 
-              style={[
-                styles.airplaneIcon,
-                {
-                  transform: [
-                    { 
-                      translateX: fadeAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-50, 50]
-                      })
-                    }
-                  ]
-                }
-              ]}
-            >
-              <Text style={styles.airplaneLoadingSymbol}>✈️</Text>
-            </Animated.View>
+            {/* Uçak ikonu kaldırıldı */}
             
             {/* Fotoğraf yükleme progress */}
             {!imagesLoaded && (
@@ -228,6 +283,20 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
                 </View>
                 <Text style={styles.loadingText}>INITIALIZING TRAINING SYSTEMS</Text>
                 <Text style={styles.loadingPercentage}>{loadingProgress}%</Text>
+                
+                {/* Web için ses çalma butonu */}
+                {showAudioButton && (
+                  <View style={styles.audioButtonContainer}>
+                    <Text style={styles.audioButtonText}>🎵 Uçak Sesi Çal</Text>
+                    <TouchableOpacity 
+                      style={styles.audioButton} 
+                      onPress={playAudioManually}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.audioButtonLabel}>PLAY AUDIO</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </>
             )}
           </View>
@@ -357,13 +426,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  airplaneIcon: {
-    marginBottom: 20,
-  },
-  airplaneLoadingSymbol: {
-    fontSize: 40,
-    color: '#FFD700',
-  },
   loadingBar: {
     width: '80%',
     height: 10,
@@ -463,5 +525,33 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 4,
     elevation: 8,
+  },
+  audioButtonContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  audioButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFD700',
+    marginBottom: 10,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+    letterSpacing: 0.5,
+  },
+  audioButton: {
+    backgroundColor: '#FFD700',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FFD700',
+  },
+  audioButtonLabel: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
