@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +16,11 @@ import { Audio } from "expo-av";
 import PrimaryFlightDisplay from "../../components/PrimaryFlightDisplay";
 import NavigationDisplay from "../../components/NavigationDisplay";
 import { useTrainingSession } from "@/hooks/useTrainingSession";
+import Svg, { 
+  Line, Path, Text as SvgText, G, Rect, Circle, Polygon, 
+  Defs, LinearGradient, Stop, ClipPath, RadialGradient
+} from "react-native-svg";
+import { AVIATION_COLORS, AVIATION_DIMENSIONS, AVIATION_FONTS, AVIATION_OPACITIES } from '../constants/aviation';
 
 export default function TrainingScreen() {
   const {
@@ -271,14 +277,61 @@ export default function TrainingScreen() {
     return false;
   };
 
+  // Responsive dimensions
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const isMobile = screenWidth < 768;
+  const isTablet = screenWidth >= 768 && screenWidth < 1024;
+  const isDesktop = screenWidth >= 1024;
+
+  // Responsive layout adjustments
+  const displayLayout = useMemo(() => {
+    if (isMobile) {
+      return {
+        flexDirection: 'column' as const,
+        gap: 8,
+        paddingHorizontal: 8,
+      };
+    } else if (isTablet) {
+      return {
+        flexDirection: 'row' as const,
+        gap: 15,
+        paddingHorizontal: 15,
+      };
+    } else {
+      return {
+        flexDirection: 'row' as const,
+        gap: 20,
+        paddingHorizontal: 20,
+      };
+    }
+  }, [isMobile, isTablet, isDesktop]);
+
+  // Responsive font sizes
+  const fontSize = useMemo(() => {
+    if (isMobile) return { small: 10, normal: 12, large: 16, xlarge: 20 };
+    if (isTablet) return { small: 11, normal: 14, large: 18, xlarge: 24 };
+    return { small: 12, normal: 16, large: 20, xlarge: 28 };
+  }, [isMobile, isTablet, isDesktop]);
+
+  // Responsive button sizes
+  const buttonSize = useMemo(() => {
+    if (isMobile) return { height: 50, padding: 12, fontSize: 14 };
+    if (isTablet) return { height: 60, padding: 16, fontSize: 16 };
+    return { height: 70, padding: 20, fontSize: 18 };
+  }, [isMobile, isTablet, isDesktop]);
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>ATC Communication Training</Text>
+      <View style={[styles.header, { paddingHorizontal: isMobile ? 10 : 20 }]}>
+        <Text style={[styles.title, { fontSize: fontSize.xlarge }]}>
+          ATC Communication Training
+        </Text>
         {session.isActive ? (
           <View style={styles.sessionInfo}>
-            <Text style={styles.sessionText}>Score: {session.score}</Text>
-            <Text style={styles.sessionText}>
+            <Text style={[styles.sessionText, { fontSize: fontSize.normal }]}>
+              Score: {session.score}
+            </Text>
+            <Text style={[styles.sessionText, { fontSize: fontSize.normal }]}>
               Commands: {session.commandsIssued}
             </Text>
           </View>
