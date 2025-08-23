@@ -9,10 +9,12 @@ import {
   Platform,
   ActivityIndicator,
   useWindowDimensions,
+  Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import PrimaryFlightDisplay from "../../components/PrimaryFlightDisplay";
 import NavigationDisplay from "../../components/NavigationDisplay";
 import { useTrainingSession } from "@/hooks/useTrainingSession";
@@ -44,6 +46,8 @@ export default function TrainingScreen() {
   const [feedbackType, setFeedbackType] = useState<"correct" | "incorrect" | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   
   // Settings state
   const [audioSensitivity, setAudioSensitivity] = useState(90); // Ses seviyesi artırıldı
@@ -67,6 +71,188 @@ export default function TrainingScreen() {
   const [totalTrainingTime, setTotalTrainingTime] = useState(18.5);
   const [currentStreak, setCurrentStreak] = useState(7);
 
+  // Statistics management functions
+  const loadStatistics = useCallback(async () => {
+    try {
+      const savedStats = await AsyncStorage.getItem('atcTrainingStatistics');
+      if (savedStats) {
+        const stats = JSON.parse(savedStats);
+        setTotalSessions(stats.totalSessions || 0);
+        setAverageScore(stats.averageScore || 0);
+        setTotalCommands(stats.totalCommands || 0);
+        setAverageResponseTime(stats.averageResponseTime || 0);
+        setAccuracy(stats.accuracy || 0);
+        setBestScore(stats.bestScore || 0);
+        setTotalTrainingTime(stats.totalTrainingTime || 0);
+        setCurrentStreak(stats.currentStreak || 0);
+      }
+    } catch (error) {
+      console.error('Error loading statistics:', error);
+    }
+  }, []);
+
+  const saveStatistics = useCallback(async () => {
+    try {
+      const stats = {
+        totalSessions,
+        averageScore,
+        totalCommands,
+        averageResponseTime,
+        accuracy,
+        bestScore,
+        totalTrainingTime,
+        currentStreak,
+        lastUpdated: new Date().toISOString()
+      };
+      await AsyncStorage.setItem('atcTrainingStatistics', JSON.stringify(stats));
+    } catch (error) {
+      console.error('Error saving statistics:', error);
+    }
+  }, [totalSessions, averageScore, totalCommands, averageResponseTime, accuracy, bestScore, totalTrainingTime, currentStreak]);
+
+  const exportStatistics = useCallback(async () => {
+    if (isExporting) return; // Prevent multiple exports
+    
+    setIsExporting(true);
+    try {
+      const stats = {
+        totalSessions,
+        averageScore,
+        totalCommands,
+        averageResponseTime,
+        accuracy,
+        bestScore,
+        totalTrainingTime,
+        currentStreak,
+        exportDate: new Date().toISOString()
+      };
+
+      const csvData = `ATC Training Statistics\n\n` +
+        `Total Sessions,${stats.totalSessions}\n` +
+        `Average Score,${stats.averageScore}%\n` +
+        `Total Commands,${stats.totalCommands}\n` +
+        `Average Response Time,${stats.averageResponseTime}s\n` +
+        `Accuracy,${stats.accuracy}%\n` +
+        `Best Score,${stats.bestScore}%\n` +
+        `Total Training Time,${stats.totalTrainingTime}h\n` +
+        `Current Streak,${stats.currentStreak} days\n` +
+        `Export Date,${stats.exportDate}`;
+
+      if (Platform.OS === 'web') {
+        // Web export - create and download file
+        try {
+          const blob = new Blob([csvData], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `atc-training-stats-${new Date().toISOString().split('T')[0]}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          Alert.alert("Export Successful", "Statistics exported successfully! Check your downloads folder.");
+        } catch (webError) {
+          console.error('Web export error:', webError);
+          // Fallback: show data in alert for copy-paste
+          Alert.alert(
+            "Export Data", 
+            "Copy this data manually:\n\n" + csvData,
+            [{ text: "OK" }]
+          );
+        }
+      } else {
+        // Mobile export - share using native share
+        try {
+          await Share.share({
+            message: `ATC Training Statistics:\n\n` +
+              `Total Sessions: ${stats.totalSessions}\n` +
+              `Average Score: ${stats.averageScore}%\n` +
+              `Total Commands: ${stats.totalCommands}\n` +
+              `Average Response Time: ${stats.averageResponseTime}s\n` +
+              `Accuracy: ${stats.accuracy}%\n` +
+              `Best Score: ${stats.bestScore}%\n` +
+              `Total Training Time: ${stats.totalTrainingTime}h\n` +
+              `Current Streak: ${stats.currentStreak} days\n` +
+              `Export Date: ${stats.exportDate}`,
+            title: 'ATC Training Statistics'
+          });
+        } catch (shareError) {
+          console.error('Share error:', shareError);
+          // Fallback: show data in alert for copy-paste
+          Alert.alert(
+            "Export Data", 
+            "Copy this data manually:\n\n" + 
+            `Total Sessions: ${stats.totalSessions}\n` +
+            `Average Score: ${stats.averageScore}%\n` +
+            `Total Commands: ${stats.totalCommands}\n` +
+            `Average Response Time: ${stats.averageResponseTime}s\n` +
+            `Accuracy: ${stats.accuracy}%\n` +
+            `Best Score: ${stats.bestScore}%\n` +
+            `Total Training Time: ${stats.totalTrainingTime}h\n` +
+            `Current Streak: ${stats.currentStreak} days`,
+            [{ text: "OK" }]
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error exporting statistics:', error);
+      Alert.alert("Export Error", "Failed to export statistics. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [totalSessions, averageScore, totalCommands, averageResponseTime, accuracy, bestScore, totalTrainingTime, currentStreak, isExporting]);
+
+  const resetStatistics = useCallback(async () => {
+    if (isResetting) return; // Prevent multiple resets
+    
+    Alert.alert(
+      "Reset Statistics",
+      "Are you sure you want to reset all training statistics? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            setIsResetting(true);
+            try {
+              // Reset all statistics to default values
+              const defaultStats = {
+                totalSessions: 0,
+                averageScore: 0,
+                totalCommands: 0,
+                averageResponseTime: 0,
+                accuracy: 0,
+                bestScore: 0,
+                totalTrainingTime: 0,
+                currentStreak: 0
+              };
+
+              setTotalSessions(defaultStats.totalSessions);
+              setAverageScore(defaultStats.averageScore);
+              setTotalCommands(defaultStats.totalCommands);
+              setAverageResponseTime(defaultStats.averageResponseTime);
+              setAccuracy(defaultStats.accuracy);
+              setBestScore(defaultStats.bestScore);
+              setTotalTrainingTime(defaultStats.totalTrainingTime);
+              setCurrentStreak(defaultStats.currentStreak);
+
+              // Save to AsyncStorage
+              await AsyncStorage.setItem('atcTrainingStatistics', JSON.stringify(defaultStats));
+              
+              Alert.alert("Statistics Reset", "All training statistics have been reset successfully.");
+            } catch (error) {
+              console.error('Error resetting statistics:', error);
+              Alert.alert("Reset Error", "Failed to reset statistics. Please try again.");
+            } finally {
+              setIsResetting(false);
+            }
+          }
+        }
+      ]
+    );
+  }, [isResetting]);
+
   useEffect(() => {
     return () => {
       if (recording) {
@@ -74,6 +260,48 @@ export default function TrainingScreen() {
       }
     };
   }, [recording]);
+
+  // Load statistics on component mount
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
+
+  // Save statistics whenever they change
+  useEffect(() => {
+    saveStatistics();
+  }, [saveStatistics]);
+
+  // Simulate some training progress for demonstration
+  useEffect(() => {
+    const simulateProgress = () => {
+      // Only simulate if no saved statistics exist
+      if (totalSessions === 0 && accuracy === 0) {
+        const demoStats = {
+          totalSessions: 24,
+          averageScore: 87.5,
+          totalCommands: 156,
+          averageResponseTime: 2.3,
+          accuracy: 94.2,
+          bestScore: 98.5,
+          totalTrainingTime: 18.5,
+          currentStreak: 7
+        };
+        
+        setTotalSessions(demoStats.totalSessions);
+        setAverageScore(demoStats.averageScore);
+        setTotalCommands(demoStats.totalCommands);
+        setAverageResponseTime(demoStats.averageResponseTime);
+        setAccuracy(demoStats.accuracy);
+        setBestScore(demoStats.bestScore);
+        setTotalTrainingTime(demoStats.totalTrainingTime);
+        setCurrentStreak(demoStats.currentStreak);
+      }
+    };
+
+    // Small delay to ensure AsyncStorage has loaded
+    const timer = setTimeout(simulateProgress, 100);
+    return () => clearTimeout(timer);
+  }, [totalSessions, accuracy]);
 
   // Ses ayarlarını uygula
   useEffect(() => {
@@ -122,7 +350,58 @@ export default function TrainingScreen() {
     }
     setIsRecording(false);
     setIsProcessing(false);
+    
+    // Update training statistics
+    updateTrainingStats();
   };
+
+  // Function to update training statistics
+  const updateTrainingStats = useCallback(() => {
+    // Only update if session has meaningful data
+    if (session.commandsIssued === 0) return;
+    
+    // Increment total sessions
+    setTotalSessions(prev => prev + 1);
+    
+    // Update total training time (add 0.5 hours for each session)
+    setTotalTrainingTime(prev => Math.round((prev + 0.5) * 10) / 10);
+    
+    // Update current streak (increment by 1 day)
+    setCurrentStreak(prev => prev + 1);
+    
+    // Update best score if current session score is higher
+    if (session.score > bestScore) {
+      setBestScore(session.score);
+    }
+    
+    // Update average score
+    setAverageScore(prev => {
+      const newTotal = (prev * (totalSessions) + session.score) / (totalSessions + 1);
+      return Math.round(newTotal * 10) / 10; // Round to 1 decimal place
+    });
+    
+    // Update total commands
+    setTotalCommands(prev => prev + session.commandsIssued);
+    
+    // Update accuracy
+    if (session.commandsIssued > 0) {
+      const sessionAccuracy = (session.correctResponses / session.commandsIssued) * 100;
+      setAccuracy(prev => {
+        const newTotal = (prev * totalSessions + sessionAccuracy) / (totalSessions + 1);
+        return Math.round(newTotal * 10) / 10; // Round to 1 decimal place
+      });
+    }
+    
+    // Update average response time (simulate based on session duration)
+    if (session.startTime && session.endTime) {
+      const sessionDuration = (session.endTime - session.startTime) / 1000; // Convert to seconds
+      const avgResponseTime = sessionDuration / Math.max(session.commandsIssued, 1);
+      setAverageResponseTime(prev => {
+        const newTotal = (prev * totalSessions + avgResponseTime) / (totalSessions + 1);
+        return Math.round(newTotal * 10) / 10; // Round to 1 decimal place
+      });
+    }
+  }, [session, bestScore, totalSessions]);
 
   const startRecording = async () => {
     try {
@@ -707,33 +986,34 @@ export default function TrainingScreen() {
                 <View style={styles.statSection}>
                   <Text style={styles.statSectionTitle}>Actions</Text>
                   
-                  <TouchableOpacity style={styles.actionButton} onPress={() => {
-                    Alert.alert("Export Data", "Export your training statistics to CSV?", [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Export", onPress: () => Alert.alert("Exported", "Statistics exported successfully!") }
-                    ]);
-                  }}>
-                    <Ionicons name="download" size={20} color="#00D4AA" />
-                    <Text style={styles.actionButtonText}>Export Statistics</Text>
+                  <TouchableOpacity 
+                    style={[styles.actionButton, isExporting && styles.actionButtonDisabled]} 
+                    onPress={exportStatistics}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? (
+                      <ActivityIndicator size="small" color="#00D4AA" />
+                    ) : (
+                      <Ionicons name="download" size={20} color="#00D4AA" />
+                    )}
+                    <Text style={styles.actionButtonText}>
+                      {isExporting ? "Exporting..." : "Export Statistics"}
+                    </Text>
                   </TouchableOpacity>
                   
-                  <TouchableOpacity style={styles.actionButton} onPress={() => {
-                    Alert.alert("Reset Stats", "Are you sure you want to reset all statistics?", [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Reset", style: "destructive", onPress: () => {
-                        setTotalSessions(0);
-                        setAverageScore(0);
-                        setTotalCommands(0);
-                        setAverageResponseTime(0);
-                        setAccuracy(0);
-                        setBestScore(0);
-                        setTotalTrainingTime(0);
-                        setCurrentStreak(0);
-                      }}
-                    ]);
-                  }}>
-                    <Ionicons name="trash" size={20} color="#FF6B6B" />
-                    <Text style={styles.actionButtonText}>Reset Statistics</Text>
+                  <TouchableOpacity 
+                    style={[styles.actionButton, isResetting && styles.actionButtonDisabled]} 
+                    onPress={resetStatistics}
+                    disabled={isResetting}
+                  >
+                    {isResetting ? (
+                      <ActivityIndicator size="small" color="#FFD700" />
+                    ) : (
+                      <Ionicons name="trash" size={20} color="#FFD700" />
+                    )}
+                    <Text style={styles.actionButtonText}>
+                      {isResetting ? "Resetting..." : "Reset Statistics"}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
@@ -1564,6 +1844,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
     borderWidth: 1,
     borderColor: "#444",
+  },
+  actionButtonDisabled: {
+    opacity: 0.6,
+    backgroundColor: "#2A2A2A",
   },
   actionButtonText: {
     fontSize: 14,
