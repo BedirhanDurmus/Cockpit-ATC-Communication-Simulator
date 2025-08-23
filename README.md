@@ -344,7 +344,7 @@ We welcome contributions from the aviation community! Please follow our contribu
 
 This project is **private and proprietary**. All rights reserved.
 
-**Copyright © 2024 ATC Communication Training Project**
+**Copyright © 2025 ATC Communication Training Project**
 
 ---
 

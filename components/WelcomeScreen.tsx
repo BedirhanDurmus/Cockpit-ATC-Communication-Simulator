@@ -116,7 +116,7 @@ export default function WelcomeScreen({ onUserLogin, onAdminLogin }: {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>© 2024 Aviation Training Systems</Text>
+          <Text style={styles.footerText}>© 2025 Bu proje HOCTECH "High-Optimized Creative Technology" şirketi tarafından geliştirilmiştir.</Text>
           <Text style={styles.footerSubtext}>Professional ATC Communication Training</Text>
         </View>
       </ScrollView>

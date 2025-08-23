@@ -236,7 +236,7 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
         {/* Alt bilgiler */}
         <View style={styles.bottomInfo}>
           <Text style={styles.versionText}>Version 1.0.0</Text>
-          <Text style={styles.copyrightText}>© 2024 Aviation Training Systems</Text>
+          <Text style={styles.copyrightText}>© 2025 Bu proje HOCTECH "High-Optimized Creative Technology" şirketi tarafından geliştirilmiştir.</Text>
           <Text style={styles.copyrightSubtext}>Professional ATC Communication Training</Text>
         </View>
       </Animated.View>
